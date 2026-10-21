@@ -361,20 +361,3 @@ Consulta [docs/TEAM_GUIDE.md](docs/TEAM_GUIDE.md) antes de comenzar una rama de 
 
 ---
 
-## 13. Estado actual
-
-- [x] Dataset RDD2022 descargado.
-- [x] Integridad estructural validada.
-- [x] 38,385 pares train imagen/XML verificados.
-- [x] `images.csv` generado.
-- [x] `annotations.csv` generado.
-- [x] Notebook 00 preparado.
-- [x] Notebook 01 preparado.
-- [ ] EDA final ejecutado/revisado.
-- [ ] Dominio OOD seleccionado.
-- [ ] `splits.csv` generado y congelado.
-- [ ] Modelos ResNet18.
-- [ ] VAE.
-- [ ] Grad-CAM.
-- [ ] Dataset externo Guatemala.
-- [ ] Evaluación final.
