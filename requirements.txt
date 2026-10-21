@@ -1,0 +1,25 @@
+# Deep Learning
+torch
+torchvision
+
+# Data analysis
+numpy>=1.26
+pandas>=2.2
+scikit-learn>=1.5
+
+# Image processing
+Pillow>=10.0
+
+# Visualization
+matplotlib>=3.8
+
+# Configuration
+PyYAML>=6.0
+
+# Utilities
+tqdm>=4.66
+
+# Jupyter
+jupyter>=1.0
+notebook>=7.0
+ipykernel>=6.29
