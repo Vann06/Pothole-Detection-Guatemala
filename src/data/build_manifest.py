@@ -265,6 +265,8 @@ def parse_xml(xml_path: Path):
 # ============================================================
 
 def main():
+    if (OUTPUT_DIR / "dataset_v1.lock.json").exists():
+        raise FileExistsError("dataset_v1 is frozen; creating new manifests requires a new dataset version.")
 
     start_time = time.time()
 

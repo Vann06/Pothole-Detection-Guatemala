@@ -1,0 +1,45 @@
+{
+  "config": {
+    "duplicate_policy": "Keep identical image SHA256 groups in a single split; reject cross-domain or conflicting-label duplicates.",
+    "ood_country": "Norway",
+    "perspective_country": "China_Drone",
+    "seed": 42,
+    "stratify": [
+      "country",
+      "road_status"
+    ],
+    "test_id_fraction": 0.15,
+    "train_fraction": 0.7,
+    "val_fraction": 0.15,
+    "version": "dataset_v1"
+  },
+  "sha256": {
+    "configs/dataset_v1.json": "d6745461dbfa656256b7fa6b9366b93d22008b8b4c4457d061788e14b883688a",
+    "data/manifests/annotations.csv": "c1631666eab650d1525ab164310e2c99190da5e3458b9975c0c7911667705d77",
+    "data/manifests/file_checksums.csv": "1da12807d540f2c1d4a111c0ec8c2792b50b58052a79177147151778b7ec8753",
+    "data/manifests/images.csv": "4d66b3c6f75e0e88b71b41049bca58249a23bc6213b7034503fa42d1fa3042f8",
+    "data/manifests/splits.csv": "c7b4690943e597a382ab0f7a8ad1298317f267901476b72111a1b1a8041a8614",
+    "reports/tables/release_audit.json": "709905ed1599ecc37c51414f44e25126a90cd049632df3a0bb389ac44f998496",
+    "reports/tables/split_summary.csv": "8d7969793a99e6f99b31b62129c9c3b762c9872ae7b59491bb4f9c2d162ad406",
+    "src/data/audit_release.py": "fde0d15d0cd37df9939a91be73a9b2c03e1453d2187e03ec7c95bfcb4b673a54",
+    "src/data/make_splits.py": "268fcf1bfd22b97d79f0602d7861531a46de0ae65e79fdf18f9b76cab191e525"
+  },
+  "software": {
+    "numpy": "2.2.6",
+    "pandas": "2.3.3",
+    "python": "3.10.11",
+    "scikit_learn": "1.7.2"
+  },
+  "split_counts": {
+    "test_id": 4174,
+    "test_ood": 8161,
+    "test_perspective": 2401,
+    "train": 19476,
+    "val": 4173
+  },
+  "text_line_endings": "LF enforced by .gitattributes",
+  "train_negative": 17128,
+  "train_pos_weight": 7.294718909710392,
+  "train_positive": 2348,
+  "version": "dataset_v1"
+}

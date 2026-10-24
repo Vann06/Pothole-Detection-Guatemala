@@ -56,7 +56,14 @@ La prevalencia global de D40 en las imágenes etiquetadas es aproximadamente **9
 
 Los datos crudos **no se suben a Git**.
 
-Consulta [data/README.md](data/README.md) para instalar y organizar el dataset.
+Consulta [data/DATA_README.md](data/DATA_README.md) para instalar y organizar el dataset.
+
+**Entrega dataset_v1 (23 de octubre de 2026):** Norway queda reservado completo
+como `test_ood`; China_Drone se reserva como `test_perspective` y no entra al
+entrenamiento principal. Los demás dominios se dividen aproximadamente 70/15/15
+en train/val/test_id, estratificando por dominio y estado de daño, con seed 42
+y agrupación de duplicados exactos. Ver [decisiones del EDA](docs/DATASET_V1.md)
+y [entrega al equipo](docs/HANDOFF.md). Guatemala sigue pendiente de recolección.
 
 ---
 
@@ -68,16 +75,20 @@ Pothole-Detection-Guatemala/
 ├── configs/
 │
 ├── data/
-│   ├── README.md
+│   ├── DATA_README.md
 │   ├── raw/
 │   │   └── RDD2022/              # NO se sube a Git
 │   └── manifests/
 │       ├── images.csv
 │       ├── annotations.csv
-│       └── splits.csv             # se generará después del EDA
+│       ├── splits.csv             # contrato congelado dataset_v1
+│       ├── file_checksums.csv
+│       └── dataset_v1.lock.json
 │
 ├── docs/
-│   └── TEAM_GUIDE.md
+│   ├── DATASET_V1.md
+│   ├── HANDOFF.md
+│   └── GUATEMALA_PROTOCOL.md
 │
 ├── notebooks/
 │   ├── 00_dataset_validation.ipynb
@@ -100,6 +111,7 @@ Pothole-Detection-Guatemala/
 │   └── xai/
 │
 ├── .gitignore
+├── TEAM_GUIDE.md
 ├── requirements.txt
 └── README.md
 ```
@@ -188,6 +200,22 @@ images.csv       38,385 filas
 annotations.csv  65,712 filas
 ```
 
+### Usar la versión congelada
+
+Ricardo, Diego y Felipe deben usar los CSV existentes sin regenerarlos:
+
+```powershell
+python src/data/make_splits.py --check
+python src/data/share_dataset.py --verify
+```
+
+El primer comando verifica hashes e integridad del contrato; el segundo compara
+todos los JPG/XML locales con las huellas de la copia validada.
+`make_splits.py` sin argumentos crea la entrega solo si aún no existe;
+rechaza sobrescribir una versión congelada. No ejecutar nuevamente
+`build_manifest.py` o `audit_release.py` sobre dataset_v1: cualquier modificación
+requiere preparar y acordar una versión nueva.
+
 ---
 
 ## 6. Notebooks
@@ -215,7 +243,8 @@ Analiza:
 - coocurrencia;
 - candidatos para test OOD.
 
-**Los splits finales no deben decidirse antes de terminar el EDA.**
+El EDA se cerró para dataset_v1; las conclusiones y limitaciones están en
+[docs/DATASET_V1.md](docs/DATASET_V1.md).
 
 ---
 
@@ -300,15 +329,18 @@ test_guatemala
     conjunto externo recolectado en Guatemala
 ```
 
-La elección del país `test_ood` se realizará **después del EDA**.
+Para dataset_v1 se eligió **Norway** como `test_ood`, completo y sin rebalanceo.
 
-`China_Drone` se analizará por separado antes de decidir si entra al experimento principal, porque introduce un cambio importante de perspectiva de captura además del cambio geográfico.
+`China_Drone` queda completo como `test_perspective`: evaluación adicional por
+cambio de perspectiva, fuera de train/val/test_id y del OOD geográfico principal.
 
 ---
 
 ## 10. Dataset de Guatemala
 
-El conjunto externo de Guatemala deberá mantenerse completamente fuera del entrenamiento principal.
+El conjunto externo de Guatemala está pendiente de recolección y deberá
+mantenerse completamente fuera del entrenamiento principal. Ver el
+[protocolo de recolección y evaluación](docs/GUATEMALA_PROTOCOL.md).
 
 Idealmente debe incluir:
 
@@ -357,7 +389,8 @@ Reglas del proyecto:
 | Diego López | VAE y detección de anomalías |
 | Felipe Aguilar | Evaluación, métricas, latencia y Grad-CAM |
 
-Consulta [docs/TEAM_GUIDE.md](docs/TEAM_GUIDE.md) antes de comenzar una rama de trabajo.
+Consulta [TEAM_GUIDE.md](TEAM_GUIDE.md) y [docs/HANDOFF.md](docs/HANDOFF.md)
+antes de comenzar una rama de trabajo.
 
 ---
 

@@ -10,7 +10,7 @@ Los datos crudos de RDD2022 **no deben subirse al repositorio**.
 
 ```text
 data/
-├── README.md
+├── DATA_README.md
 │
 ├── raw/
 │   └── RDD2022/
@@ -34,7 +34,9 @@ Algunos ZIP originales pueden contener un nivel extra, por ejemplo:
 Japan/Japan/train/...
 ```
 
-El código del proyecto busca archivos recursivamente y no depende de que todos los países tengan exactamente la misma profundidad.
+El constructor de manifests busca archivos recursivamente. Una vez congelados
+los CSV, **cada ruta debe coincidir exactamente** con `image_path` y `xml_path`.
+Conservar los niveles repetidos en los ZIP de entrega; no aplanar carpetas.
 
 ---
 
@@ -219,7 +221,8 @@ Prevalencia aproximada:
 9.57%
 ```
 
-La estrategia de entrenamiento se calculará **después de generar los splits**.
+El peso de entrenamiento de dataset_v1 se registra en
+`manifests/dataset_v1.lock.json`, calculado solo sobre train.
 
 No calcular `pos_weight` con test/OOD.
 
@@ -283,23 +286,31 @@ annotations.csv  65,712
 
 ## 11. `splits.csv`
 
-Todavía no debe crearse manualmente.
+Ya está congelado como **dataset_v1**; no editarlo ni regenerarlo por integrante.
 
-Será generado por:
+Fue generado por:
 
 ```text
 src/data/make_splits.py
 ```
 
-después de:
+con:
 
-1. finalizar el EDA;
-2. decidir qué hacer con `China_Drone`;
-3. seleccionar un dominio completo como `test_ood`;
-4. definir train/validation/test_id;
-5. fijar `random seed = 42`.
+1. EDA cerrado y documentado en `docs/DATASET_V1.md`;
+2. `China_Drone` completo en `test_perspective`;
+3. `Norway` completo en `test_ood`;
+4. resto aproximadamente 70/15/15 train/val/test_id, estratificado por dominio
+   y estado de daño y agrupando copias idénticas por SHA256;
+5. `random seed = 42`.
 
-Una vez generado, `splits.csv` será el **contrato oficial del equipo**.
+`splits.csv` es el **contrato oficial del equipo**. Las 38,385 filas cubren
+exactamente una vez cada `sample_id`; el test original sin etiquetas no se usa.
+
+Verificar los manifests con `python src/data/make_splits.py --check` y la copia
+local de JPG/XML con `python src/data/share_dataset.py --verify`. Las huellas
+están en `file_checksums.csv` y el contrato se protege en `dataset_v1.lock.json`.
+No volver a ejecutar el constructor o la auditoría para modificar esta versión.
+Las instrucciones de ZIP/Drive están en [docs/HANDOFF.md](../docs/HANDOFF.md).
 
 Ningún integrante debe crear splits independientes.
 
@@ -307,7 +318,8 @@ Ningún integrante debe crear splits independientes.
 
 ## 12. Dataset de Guatemala
 
-Se agregará como conjunto externo.
+Se agregará como conjunto externo; todavía no se han recolectado ni etiquetado
+imágenes en esta entrega. Ver [el protocolo](../docs/GUATEMALA_PROTOCOL.md).
 
 Recomendación de estructura:
 

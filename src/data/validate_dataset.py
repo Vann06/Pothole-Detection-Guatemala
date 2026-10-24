@@ -653,7 +653,8 @@ def main():
     print_section("9. RESULTADO FINAL")
 
     structural_ok = (
-        total_missing_xml == 0
+        len(existing_domains) == len(EXPECTED_DOMAINS)
+        and total_missing_xml == 0
         and total_missing_image == 0
         and len(corrupt_xml) == 0
         and total_duplicate_images == 0

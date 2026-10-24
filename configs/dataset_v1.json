@@ -1,0 +1,11 @@
+{
+  "version": "dataset_v1",
+  "seed": 42,
+  "ood_country": "Norway",
+  "perspective_country": "China_Drone",
+  "train_fraction": 0.7,
+  "val_fraction": 0.15,
+  "test_id_fraction": 0.15,
+  "stratify": ["country", "road_status"],
+  "duplicate_policy": "Keep identical image SHA256 groups in a single split; reject cross-domain or conflicting-label duplicates."
+}

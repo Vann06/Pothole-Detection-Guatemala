@@ -56,3 +56,8 @@ logs/
 # Local configuration
 # =========================
 configs/paths.local.yaml
+
+# Local distribution and external evaluation photos
+.dist/
+data/recovery/
+data/external/

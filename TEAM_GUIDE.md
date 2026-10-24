@@ -18,7 +18,10 @@ data/manifests/annotations.csv
 data/manifests/splits.csv
 ```
 
-`splits.csv` todavía no está congelado. Mientras se termina el EDA, cada integrante puede preparar código y arquitectura, pero **no producir resultados finales comparables**.
+`splits.csv` queda congelado como **dataset_v1** con seed 42. Norway se reserva
+como `test_ood` y China_Drone como `test_perspective`. Leer las
+[decisiones y limitaciones](docs/DATASET_V1.md) y la
+[entrega e instalación](docs/HANDOFF.md). Los experimentos deben registrar esta versión.
 
 ---
 
@@ -27,7 +30,7 @@ data/manifests/splits.csv
 Clonar el repositorio:
 
 ```powershell
-git clone <URL_DEL_REPOSITORIO>
+git clone https://github.com/Vann06/Pothole-Detection-Guatemala.git
 cd Pothole-Detection-Guatemala
 ```
 
@@ -203,14 +206,19 @@ data/manifests/*
 Vianka termina la primera fase cuando:
 
 ```text
-[ ] EDA revisado
-[ ] China_Drone decidido
-[ ] test_ood decidido
-[ ] splits.csv generado
-[ ] random seed documentado
-[ ] cada sample_id tiene exactamente un split
-[ ] README actualizado
+[x] EDA revisado y conclusiones documentadas
+[x] China_Drone: test_perspective, fuera del entrenamiento principal
+[x] test_ood: Norway completo
+[x] splits.csv generado y dataset_v1 protegido por hashes
+[x] random seed = 42 documentado
+[x] cada sample_id tiene exactamente un split
+[x] README y guía de entrega actualizados
 ```
+
+Decisiones técnicas tomadas para esta entrega a solicitud de Vianka; no
+representan una aprobación previa de los demás integrantes. Cualquier cambio
+posterior del dominio OOD requiere acuerdo y una versión distinta del dataset.
+Guatemala: protocolo documentado, fotos y etiquetas todavía pendientes.
 
 ---
 
@@ -457,6 +465,7 @@ train_df = df[df["split"] == "train"]
 val_df = df[df["split"] == "val"]
 test_id_df = df[df["split"] == "test_id"]
 test_ood_df = df[df["split"] == "test_ood"]
+test_perspective_df = df[df["split"] == "test_perspective"]
 ```
 
 No hacer:
@@ -511,7 +520,9 @@ No mezclarlo silenciosamente con el resto.
 
 Las imágenes de drone tienen una perspectiva diferente.
 
-Antes de generar `splits.csv` se tomará una decisión explícita:
+Decisión dataset_v1: **B**, reservarlo completo como `test_perspective`, una
+evaluación adicional de domain shift. No usarlo para training ni selección de
+hiperparámetros. Las opciones consideradas fueron:
 
 ```text
 A. excluir China_Drone del experimento principal;
@@ -519,7 +530,7 @@ B. usarlo como experimento adicional de domain shift;
 C. incluirlo bajo una justificación documentada.
 ```
 
-Hasta entonces, conservarlo en los manifests.
+Se conserva en los manifests y cada muestra tiene su split explícito.
 
 ---
 

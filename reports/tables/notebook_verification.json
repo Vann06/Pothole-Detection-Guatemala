@@ -1,0 +1,12 @@
+{
+  "00_dataset_validation.ipynb": {
+    "code_cells": 17,
+    "executed": 17,
+    "errors": 0
+  },
+  "01_eda_rdd2022.ipynb": {
+    "code_cells": 27,
+    "executed": 27,
+    "errors": 0
+  }
+}

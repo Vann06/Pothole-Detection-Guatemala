@@ -1,0 +1,16 @@
+{
+  "images_verified": 38385,
+  "xml_verified": 38385,
+  "image_bytes": 11070436317,
+  "xml_bytes": 24718784,
+  "exact_duplicate_groups": 1,
+  "exact_duplicate_extra_images": 1,
+  "checks": [
+    "Pillow verify",
+    "image dimensions vs manifest",
+    "XML parsing",
+    "XML object and canonical class counts vs manifest",
+    "SHA256 JPG and XML"
+  ],
+  "limitations": "No exhaustive pixel decoding, near-duplicate or same-road/sequence grouping; no sequence metadata available."
+}
