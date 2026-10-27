@@ -48,6 +48,19 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
+Para entrenar en GPU NVIDIA, instalar antes torch con CUDA:
+
+```powershell
+python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+```
+
+Si Windows bloquea una DLL de pandas ("Una directiva de Control de aplicaciones bloqueó este archivo"),
+instalar las versiones registradas en `dataset_v1.lock.json`:
+
+```powershell
+python -m pip install pandas==2.3.3 numpy==2.2.6 scikit-learn==1.7.2
+```
+
 Para Jupyter:
 
 ```powershell
@@ -230,34 +243,88 @@ Branch sugerida:
 feature/resnet
 ```
 
+Estado: **pipeline implementado y probado con datos sintéticos; falta entrenar con RDD2022**
+(pendiente de los ZIPs de dataset_v1).
+
 Responsabilidades:
 
 ### Experimento 1
 
 ```text
-ResNet18 desde cero
+ResNet18 desde cero                       configs/resnet/exp1_scratch.yaml
 ```
 
 ### Experimento 2
 
 ```text
-ResNet18 preentrenada + fine-tuning
+ResNet18 preentrenada + fine-tuning       configs/resnet/exp2_pretrained.yaml
 ```
 
 ### Experimento 3
 
 ```text
-mejor configuración + augmentation
+mejor configuración + augmentation        configs/resnet/exp3_augment.yaml
 ```
 
-Archivos sugeridos:
+### Experimento 4 (adicional, propuesto; requiere visto bueno del equipo)
 
 ```text
-src/models/resnet.py
-src/data/dataset.py
-src/models/train_resnet.py
-notebooks/02_resnet.ipynb
+D40 principal + D00/D10/D20 auxiliares    configs/resnet/exp4_auxiliary.yaml
 ```
+
+La red tiene 4 salidas (D40 primero) y la pérdida es
+`BCE(D40) + 0.4 · promedio BCE(D00, D10, D20)`, cada clase con su `pos_weight` de train.
+**El target del proyecto no cambia**: selección de checkpoint, threshold y métricas principales siguen
+siendo solo de D40. Las grietas se reportan como PR-AUC auxiliar. Se compara contra exp2 (misma
+configuración) para aislar el efecto de las tareas auxiliares.
+
+Archivos:
+
+```text
+src/data/dataset.py            carga splits oficiales (verifica SHA256 del lock), Dataset, transforms
+src/models/resnet.py           ResNet18 con 1 salida (D40) o 4 (D40 + auxiliares)
+src/models/train_resnet.py     entrenamiento, selección, threshold, evaluación, latencia
+configs/resnet/*.yaml          un archivo por experimento
+tests/test_resnet_pipeline.py  pruebas con dataset sintético
+notebooks/02_resnet.ipynb      solo lee resultados: curvas, tablas, matrices, domain shift
+```
+
+Ejecución (desde la raíz, con `.venv` activo):
+
+```powershell
+python src/data/share_dataset.py --verify
+python -m src.models.train_resnet --config configs/resnet/exp2_pretrained.yaml --limit 500 --epochs 1
+python -m src.models.train_resnet --config configs/resnet/exp2_pretrained.yaml
+python -m src.models.train_resnet --config configs/resnet/exp1_scratch.yaml
+python -m src.models.train_resnet --config configs/resnet/exp3_augment.yaml
+python -m src.models.train_resnet --config configs/resnet/exp4_auxiliary.yaml
+```
+
+Si exp1 supera a exp2 en PR-AUC de **val**, copiar su configuración a exp3 (y a exp4) antes de correrlos.
+Tiempo estimado en GTX 1650: ~7–9 min por época, ~8–10 h para los cuatro.
+
+### Selección de modelo y threshold
+
+```text
+PR-AUC (D40) en val   → elegir checkpoint (cada época, early stopping) y comparar experimentos
+F1 máximo (D40) en val → fijar el threshold, una sola vez, con el checkpoint ya elegido
+threshold fijo         → precision, recall, F1 y confusion matrix en test_id, test_ood, test_perspective
+```
+
+PR-AUC no depende del threshold; su referencia de azar es la prevalencia
+(~0.12 en val/test_id, ~0.03 en test_ood y test_perspective), por lo que debe leerse junto a ella.
+
+### Salidas por experimento
+
+```text
+reports/experiments/resnet/<experiment_id>/config.yaml      configuración resuelta, pos_weight, versión y SHA256
+reports/experiments/resnet/<experiment_id>/history.csv      loss train/val y PR-AUC val por época
+reports/experiments/resnet/<experiment_id>/metrics.json     métricas por split, threshold, latencia
+reports/experiments/resnet/<experiment_id>/predictions.csv  contrato de predicciones (abajo)
+checkpoints/resnet/<experiment_id>/best.pt                  fuera de Git; compartir por Drive
+```
+
+Las corridas con `--limit` se guardan como `<experiment_id>_limitN` y el notebook las ignora.
 
 ### Reglas
 
@@ -317,6 +384,21 @@ scheduler
 augmentation
 checkpoint seleccionado
 ```
+
+Todo lo anterior queda registrado automáticamente en `config.yaml`, `history.csv` y `metrics.json`.
+
+### Entregables para el equipo
+
+- A Felipe: `best.pt` del modelo final (por Drive), su `predictions.csv` y el preprocessing de evaluación
+  `build_transforms(train=False)` (resize 224×224 + normalización ImageNet), necesarios para Grad-CAM.
+- Formato de `predictions.csv` (contrato de `docs/HANDOFF.md`):
+
+```text
+sample_id, split, y_true, y_score, threshold, experiment_id, dataset_version
+```
+
+`y_score` es siempre la probabilidad de D40. exp4 agrega al final `y_true_D00, y_score_D00, …, y_score_D20`
+sin alterar las primeras siete columnas.
 
 ---
 
@@ -380,6 +462,13 @@ No seleccionar threshold usando test ni Guatemala.
 
 Debe fijarse usando validation.
 
+### Comparación con ResNet
+
+Para comparar en la misma tabla, entregar `predictions.csv` con el mismo contrato que ResNet
+(`sample_id, split, y_true, y_score, threshold, experiment_id, dataset_version`), con `y_true = has_D40`
+y `y_score` = error de reconstrucción (documentar su escala; mayor = más anómalo). Reportar PR-AUC de D40
+y F1 con el threshold fijado en val, igual que ResNet.
+
 ---
 
 ## Felipe — Evaluación y XAI
@@ -427,6 +516,18 @@ También analizar por dominio.
 Cuando exista D40, `annotations.csv` permite recuperar sus bounding boxes para estudiar si la zona de atención coincide razonablemente con el pothole.
 
 Grad-CAM se usa como explicación; no debe presentarse como segmentación exacta.
+
+### Insumos desde ResNet
+
+- `reports/experiments/resnet/<exp>/predictions.csv`: permite recalcular métricas y separar TP/TN/FP/FN
+  con la columna `threshold` (ya fijada en val).
+- `best.pt` por Drive; cargar con `build_resnet18(pretrained=False, outputs=1)` (4 en exp4) y
+  `torch.load(..., weights_only=True)["model"]`. Preprocessing: `build_transforms(train=False)`.
+- Grad-CAM se calcula sobre la salida 0 (D40) en todos los experimentos.
+- Para exp4, las columnas `y_true_D00/D10/D20` permiten verificar si los falsos positivos son grietas.
+
+Las funciones de `src/evaluation/` pueden reemplazar más adelante el cálculo de métricas que hoy hace
+`train_resnet.py` con sklearn, siempre que produzcan los mismos valores.
 
 ---
 
