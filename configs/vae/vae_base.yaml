@@ -1,0 +1,16 @@
+# vae base: se entrena solo con imagenes de train sin dano anotado (has_any_damage == 0)
+# checkpoint = menor perdida en los normales de val (beta = 1); threshold = f1 max d40 en val
+experiment_id: vae_base
+latent: 128
+image_size: 128
+batch_size: 64
+epochs: 50
+lr: 0.001
+patience: 8
+warmup_epochs: 5
+patch: 16
+num_workers: 2
+seed: 42
+amp: true
+use_cache: true
+latency_images: 200
