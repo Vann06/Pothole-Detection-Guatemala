@@ -5,7 +5,6 @@ D40 stays the primary target for checkpoint selection, threshold and reported me
 """
 import argparse
 import json
-import random
 import time
 from pathlib import Path
 
@@ -13,14 +12,16 @@ import numpy as np
 import pandas as pd
 import torch
 import yaml
-from sklearn.metrics import average_precision_score, confusion_matrix, precision_recall_curve
+from sklearn.metrics import average_precision_score
 from torch import nn
-from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from src.data.dataset import (DATASET_ROOT, MANIFESTS, PotholeDataset, build_transforms, compute_pos_weight,
-                              label_columns, load_split_frame, release_info)
+                              label_columns, load_split_frame, make_loader, release_info)
+from src.evaluation.latency import measure_latency
+from src.evaluation.metrics import best_f1_threshold, prediction_frame, split_metrics
 from src.models.resnet import build_resnet18
+from src.utils.seed import set_seed
 
 ROOT = Path(__file__).resolve().parents[2]
 REPORTS = ROOT / "reports/experiments/resnet"
@@ -29,13 +30,6 @@ EVAL_SPLITS = ("val", "test_id", "test_ood", "test_perspective")
 DEFAULTS = dict(pretrained=False, augment=False, image_size=224, batch_size=32, epochs=20, lr=1e-4,
                 weight_decay=1e-4, patience=5, num_workers=4, seed=42, amp=True, latency_images=200,
                 aux_classes=[], aux_weight=0.0)
-
-
-def set_seed(seed):
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
 
 
 class AuxiliaryLoss(nn.Module):
@@ -52,14 +46,6 @@ class AuxiliaryLoss(nn.Module):
         if len(per_class) == 1:
             return per_class[0]
         return per_class[0] + self.aux_weight * per_class[1:].mean()
-
-
-def make_loader(frame, transform, config, dataset_root, shuffle):
-    workers = config["num_workers"]
-    return DataLoader(PotholeDataset(frame, transform, dataset_root, config["aux_classes"]),
-                      batch_size=config["batch_size"], shuffle=shuffle, num_workers=workers,
-                      pin_memory=torch.cuda.is_available(), persistent_workers=workers > 0,
-                      generator=torch.Generator().manual_seed(config["seed"]))
 
 
 def train_epoch(model, loader, criterion, optimizer, scaler, device, amp):
@@ -93,42 +79,6 @@ def predict(model, loader, criterion, device, amp):
     return total / len(loader.dataset), ids, np.concatenate(labels).astype(int), np.concatenate(scores)
 
 
-def best_f1_threshold(y_true, y_score):
-    precision, recall, thresholds = precision_recall_curve(y_true, y_score)
-    f1 = 2 * precision[:-1] * recall[:-1] / np.clip(precision[:-1] + recall[:-1], 1e-12, None)
-    return float(thresholds[np.argmax(f1)])
-
-
-def split_metrics(y_true, y_score, threshold):
-    y_pred = (y_score >= threshold).astype(int)
-    tn, fp, fn, tp = confusion_matrix(y_true, y_pred, labels=[0, 1]).ravel().tolist()
-    precision = tp / (tp + fp) if tp + fp else 0.0
-    recall = tp / (tp + fn) if tp + fn else 0.0
-    f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
-    return dict(n=len(y_true), positives=int(y_true.sum()), prevalence=float(y_true.mean()),
-                precision=precision, recall=recall, f1=f1,
-                pr_auc=float(average_precision_score(y_true, y_score)),
-                confusion_matrix={"tn": tn, "fp": fp, "fn": fn, "tp": tp})
-
-
-@torch.no_grad()
-def measure_latency(model, dataset, device, count, warmup=10):
-    """Median forward time in ms for batch size 1 on already preprocessed images."""
-    model.eval().to(device)
-    times = []
-    for index in range(min(count + warmup, len(dataset))):
-        image = dataset[index][0].unsqueeze(0).to(device)
-        if device.type == "cuda":
-            torch.cuda.synchronize()
-        start = time.perf_counter()
-        model(image)
-        if device.type == "cuda":
-            torch.cuda.synchronize()
-        if index >= warmup:
-            times.append((time.perf_counter() - start) * 1000)
-    return float(np.median(times)) if times else None
-
-
 def train(config, manifests=MANIFESTS, dataset_root=DATASET_ROOT, reports=REPORTS,
           checkpoints=CHECKPOINTS, limit=None, device=None):
     config = {**DEFAULTS, **config}
@@ -143,10 +93,15 @@ def train(config, manifests=MANIFESTS, dataset_root=DATASET_ROOT, reports=REPORT
     columns = label_columns(config["aux_classes"])
     pos_weights = {column: compute_pos_weight(frame, column) for column in columns}
     size = config["image_size"]
+
+    def loader_for(split_frame, transform, shuffle):
+        return make_loader(split_frame, transform, dataset_root, config["batch_size"], config["num_workers"],
+                           config["seed"], shuffle, config["aux_classes"])
+
     eval_transform = build_transforms(train=False, size=size)
-    train_loader = make_loader(frame[frame.split == "train"], build_transforms(True, config["augment"], size),
-                               config, dataset_root, shuffle=True)
-    val_loader = make_loader(frame[frame.split == "val"], eval_transform, config, dataset_root, shuffle=False)
+    train_loader = loader_for(frame[frame.split == "train"], build_transforms(True, config["augment"], size),
+                              shuffle=True)
+    val_loader = loader_for(frame[frame.split == "val"], eval_transform, shuffle=False)
     print(f"{experiment_id}: {len(train_loader.dataset)} train / {len(val_loader.dataset)} val, "
           f"pos_weight={ {k: round(v, 3) for k, v in pos_weights.items()} }, device={device}")
 
@@ -182,15 +137,14 @@ def train(config, manifests=MANIFESTS, dataset_root=DATASET_ROOT, reports=REPORT
     release = release_info(manifests)
     results, rows, threshold = {}, [], None
     for split in EVAL_SPLITS:
-        loader = val_loader if split == "val" else make_loader(
-            frame[frame.split == split], eval_transform, config, dataset_root, shuffle=False)
+        loader = val_loader if split == "val" else loader_for(frame[frame.split == split], eval_transform,
+                                                             shuffle=False)
         _, ids, y_true, y_score = predict(model, loader, criterion, device, amp)
         if threshold is None:  # val comes first: the threshold is fixed there and reused on every test split
             threshold = best_f1_threshold(y_true[:, 0], y_score[:, 0])
         results[split] = split_metrics(y_true[:, 0], y_score[:, 0], threshold)
-        table = pd.DataFrame(dict(sample_id=ids, split=split, y_true=y_true[:, 0], y_score=y_score[:, 0],
-                                  threshold=threshold, experiment_id=experiment_id,
-                                  dataset_version=release["dataset_version"]))
+        table = prediction_frame(ids, split, y_true[:, 0], y_score[:, 0], threshold, experiment_id,
+                                 release["dataset_version"])
         if config["aux_classes"]:
             results[split]["auxiliary"] = {}
         for index, name in enumerate(config["aux_classes"], start=1):

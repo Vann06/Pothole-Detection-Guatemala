@@ -6,7 +6,7 @@ from pathlib import Path
 import pandas as pd
 import torch
 from PIL import Image
-from torch.utils.data import Dataset
+from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms as T
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -49,8 +49,11 @@ def compute_pos_weight(frame, column="has_D40"):
     return (len(train) - positives) / positives
 
 
-def build_transforms(train=False, augment=False, size=224):
-    """Deterministic resize for evaluation; augmentation only when training with augment=True."""
+def build_transforms(train=False, augment=False, size=224, normalize=True):
+    """Deterministic resize for evaluation; augmentation only when training with augment=True.
+
+    normalize=False keeps pixels in [0, 1] (needed by the VAE, which reconstructs the raw image).
+    """
     if train and augment:
         steps = [T.RandomResizedCrop(size, scale=(0.7, 1.0)),
                  T.RandomHorizontalFlip(),
@@ -58,7 +61,10 @@ def build_transforms(train=False, augment=False, size=224):
                  T.RandomRotation(5)]
     else:
         steps = [T.Resize((size, size))]
-    return T.Compose(steps + [T.ToTensor(), T.Normalize(IMAGENET_MEAN, IMAGENET_STD)])
+    steps.append(T.ToTensor())
+    if normalize:
+        steps.append(T.Normalize(IMAGENET_MEAN, IMAGENET_STD))
+    return T.Compose(steps)
 
 
 class PotholeDataset(Dataset):
@@ -77,3 +83,11 @@ class PotholeDataset(Dataset):
         with Image.open(self.paths[index]) as image:
             tensor = self.transform(image.convert("RGB"))
         return tensor, torch.from_numpy(self.labels[index]), self.ids[index]
+
+
+def make_loader(frame, transform, dataset_root, batch_size, num_workers, seed, shuffle, aux_classes=()):
+    """DataLoader over PotholeDataset with a seeded shuffle; shared by every model."""
+    return DataLoader(PotholeDataset(frame, transform, dataset_root, aux_classes),
+                      batch_size=batch_size, shuffle=shuffle, num_workers=num_workers,
+                      pin_memory=torch.cuda.is_available(), persistent_workers=num_workers > 0,
+                      generator=torch.Generator().manual_seed(seed))
