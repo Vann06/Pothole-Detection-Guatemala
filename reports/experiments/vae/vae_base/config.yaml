@@ -1,11 +1,13 @@
 latent: 128
 image_size: 128
+patch_size: null
 batch_size: 64
 epochs: 50
 lr: 0.001
 patience: 8
 warmup_epochs: 5
 patch: 16
+std_floor_frac: 0.1
 num_workers: 2
 seed: 42
 amp: true
@@ -17,9 +19,13 @@ scheduler: null
 loss: per-image sum of squared error + beta * KL, averaged over the batch
 beta_schedule: linear 0 -> 1 over 5 epochs
 selection: min val loss (beta=1) on val images without annotated damage, after warmup
-threshold: max val F1 (D40) per score; primary score = higher val PR-AUC (D40)
-score_scale: squared error per pixel in [0, 1] RGB space, averaged over channels;
-  global = image mean, patch = max of the patch-averaged error; higher = more anomalous
+threshold: max val F1 (D40) per score; primary score = highest val PR-AUC (D40)
+position_stats: per-position mean/std of the patch grid on train no-damage images,
+  std floored at 0.1 x median std
+score_scale: 'global and patch: squared error per pixel in [0, 1] RGB space, averaged
+  over channels (global = image mean, patch = max of the patch-averaged error); patch_norm:
+  unitless z-score, max over positions of (patch error - train no-damage mean) / floored
+  std; higher = more anomalous'
 image_source: RDD2022_128
 train_images: 4531
 val_no_damage_images: 970

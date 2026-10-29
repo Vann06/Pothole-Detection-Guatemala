@@ -71,7 +71,8 @@ class VAEPipelineTests(unittest.TestCase):
             self.assertTrue((out / name).exists(), name)
         predictions = pd.read_csv(out / "predictions.csv")
         self.assertEqual(tuple(predictions.columns[:7]), PREDICTION_COLUMNS)
-        self.assertEqual(list(predictions.columns[7:]), ["y_score_global", "y_score_patch", "group", "country"])
+        self.assertEqual(list(predictions.columns[7:]),
+                         ["y_score_global", "y_score_patch", "y_score_patch_norm", "group", "country"])
         self.assertEqual(len(predictions), 4 * PER_SPLIT)
         self.assertNotIn("train", set(predictions.split))
         self.assertEqual(predictions.threshold.nunique(), 1)
@@ -92,16 +93,47 @@ class VAEPipelineTests(unittest.TestCase):
         self.assertEqual(set(metrics["breakdown"]), {"val", "test_id", "test_ood", "test_perspective"})
         self.assertIn("other_damage_classes", metrics["breakdown"]["val"][primary])
 
+    def redraw_images(self, prefix, seed):
+        # cambia los pixeles de un split sin tocar etiquetas
+        rng = np.random.default_rng(seed)
+        for path in self.images.image_path[self.images.sample_id.str.startswith(prefix)]:
+            Image.fromarray(rng.integers(0, 255, (40, 48, 3), dtype=np.uint8)).save(self.images_root / path)
+
     def test_choices_come_only_from_val(self):
         first = self.run_train()
-        # se dan vuelta las etiquetas de test: threshold y score principal no deben moverse
+        # test cambiado por completo (etiquetas e imagenes): nada de lo elegido debe moverse
         flipped = self.images.copy()
         is_test = flipped.sample_id.str.startswith("test_")
         flipped.loc[is_test, "has_D40"] = 1 - flipped.loc[is_test, "has_D40"]
         flipped.to_csv(self.manifests / "images.csv", index=False)
+        self.redraw_images("test_", seed=1)
         second = self.run_train(experiment_id="flipped")
         self.assertEqual(first["thresholds"], second["thresholds"])
         self.assertEqual(first["primary_score"], second["primary_score"])
+        self.assertEqual(first["position_stats"], second["position_stats"])
+
+    def test_position_stats_come_only_from_train_normals(self):
+        first = self.run_train()["position_stats"]
+        self.assertEqual(first["n_images"], 4)
+        self.assertEqual(first["grid"], [2, 2])  # 32 / 16
+        # val si cambia los thresholds (es su trabajo), pero no las stats
+        self.redraw_images("val_", seed=2)
+        second = self.run_train(experiment_id="val_changed")["position_stats"]
+        self.assertEqual(first, second)
+
+    def test_patch_model_run(self):
+        metrics = self.run_train(experiment_id="patches", image_size=64, patch_size=32, patch=16)
+        out = self.root / "reports/patches"
+        predictions = pd.read_csv(out / "predictions.csv")
+        self.assertEqual(tuple(predictions.columns[:7]), PREDICTION_COLUMNS)
+        self.assertEqual(len(predictions), 4 * PER_SPLIT)
+        self.assertTrue(np.isfinite(predictions.y_score_patch_norm).all())
+        self.assertEqual(metrics["position_stats"]["grid"], [4, 4])
+        self.assertEqual(metrics["latency"]["patch_size"], 32)
+        config = yaml.safe_load((out / "config.yaml").read_text(encoding="utf-8"))
+        self.assertEqual(config["patch_size"], 32)
+        checkpoint = torch.load(self.root / "ckpt/patches/best.pt", weights_only=True)
+        self.assertEqual(checkpoint["config"]["patch_size"], 32)
 
     def test_cached_images_are_used_when_available(self):
         build_cache(self.images, self.images_root, cache_root(32, self.images_root), 32)
@@ -118,6 +150,9 @@ class VAEPipelineTests(unittest.TestCase):
             self.run_train(warmup_epochs=5)
         with self.assertRaises(ValueError):
             self.run_train(experiment_id="../escape")
+        for bad in (dict(patch=24), dict(image_size=64, patch_size=48), dict(image_size=64, patch_size=32, patch=64)):
+            with self.assertRaises(ValueError):
+                self.run_train(**bad)
         no_val_normals = self.images[~(self.images.sample_id.str.startswith("val_") & (self.images.has_any_damage == 0))]
         no_val_normals.to_csv(self.manifests / "images.csv", index=False)
         with self.assertRaises(ValueError):

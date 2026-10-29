@@ -410,8 +410,10 @@ Branch sugerida:
 feature/vae
 ```
 
-Estado: **pipeline implementado, probado y entrenado (`vae_base`)**. Resultado: con esta configuración el
-score de reconstrucción **no separa D40** (PR-AUC en val 0.10 con prevalencia 0.12); ver `notebooks/03_vae.ipynb`.
+Estado: **pipeline implementado, probado y entrenado en dos variantes (`vae_base`, `vae_patch512`)**.
+Resultado: **ningún score de reconstrucción separa D40** (PR-AUC en val 0.093–0.105 con prevalencia 0.121; dentro
+de India y Japan los baches puntúan *menos* que las imágenes sin daño). El error del VAE responde a texturas finas
+(ramas, bordes, cables) y queda ≈0 dentro de las cajas D40, incluso a 512 px por parches. Ver `notebooks/03_vae.ipynb`.
 
 Responsabilidades:
 
@@ -424,11 +426,12 @@ Responsabilidades:
 Archivos:
 
 ```text
-src/models/vae.py               ConvVAE (128 -> 4 -> 128, salida sigmoide), pérdida y scores de anomalía
+src/models/vae.py               ConvVAE, PatchVAE (mismo VAE sobre parches), pérdida, scores y stats por posición
 src/models/train_vae.py         entrenamiento, selección, threshold, evaluación, desglose, latencia
 src/data/cache_images.py        caché PNG sin pérdida de las imágenes redimensionadas
 src/evaluation/breakdown.py     desglose por grupo, país y clase de daño (sirve para cualquier modelo)
-configs/vae/vae_base.yaml       configuración del experimento
+configs/vae/vae_base.yaml       imagen completa a 128×128
+configs/vae/vae_patch512.yaml   imagen a 512×512, el VAE ve parches de 64×64 (64 por imagen)
 tests/test_vae_model.py         pruebas del modelo, la pérdida y los scores
 tests/test_vae_pipeline.py      pruebas del pipeline con dataset sintético
 tests/test_cache_images.py      pruebas del caché
@@ -438,9 +441,11 @@ notebooks/03_vae.ipynb          solo lee resultados: curvas, grupos, países, cl
 Ejecución (desde la raíz, con el entorno activo):
 
 ```powershell
-python -m src.data.cache_images --size 128          # una sola vez; queda en data/raw/RDD2022_128 (fuera de Git)
+python -m src.data.cache_images --size 128          # una sola vez; data/raw/RDD2022_128 (~1 GB, fuera de Git)
+python -m src.data.cache_images --size 512          # una sola vez; data/raw/RDD2022_512 (~13 GB, fuera de Git)
 python -m src.models.train_vae --config configs/vae/vae_base.yaml --limit 256 --epochs 3 --warmup-epochs 1
-python -m src.models.train_vae --config configs/vae/vae_base.yaml
+python -m src.models.train_vae --config configs/vae/vae_base.yaml       # ~15 min en RTX 3050
+python -m src.models.train_vae --config configs/vae/vae_patch512.yaml   # ~35 min en RTX 3050
 ```
 
 `warmup_epochs` no puede superar `epochs` (β nunca llegaría a 1); por eso la prueba corta usa `--warmup-epochs`.
@@ -449,23 +454,29 @@ python -m src.models.train_vae --config configs/vae/vae_base.yaml
 
 ```text
 train                 split == train y has_any_damage == 0 (4,531 imágenes: solo Czech, India, Japan)
-entrada               128×128 estirada (como ResNet), píxeles en [0, 1], sin normalización ImageNet
+entrada               estirada (como ResNet) a image_size, píxeles en [0, 1], sin normalización ImageNet
+patch_size            opcional: el VAE procesa parches sin solape y reconstruye la imagen completa
 pérdida               suma por imagen de error cuadrático + β · KL, promedio del batch; β sube 0 -> 1 en warmup_epochs
 checkpoint            menor pérdida con β = 1 en las imágenes sin daño de val (no usa etiquetas), tras el warmup
-scores                global = error medio de la imagen; patch = máximo del error promediado en parches 16×16
+scores                global = error medio de la imagen
+                      patch = máximo del error promediado por celda (`patch`: 16 en vae_base, 64 en vae_patch512)
+                      patch_norm = máximo de (error de la celda - media de su posición) / desviación de su posición,
+                      con media/desviación de las imágenes de train sin daño (piso: 0.1 × mediana de la desviación)
 threshold             F1 máximo de D40 en val, por score; score principal = mayor PR-AUC de D40 en val
 ```
 
-Escala del score: error cuadrático por píxel en RGB [0, 1], promediado en canales; mayor = más anómalo.
-En eval se usa z = μ, así que los scores son deterministas.
+Escala: `global` y `patch` son error cuadrático por píxel en RGB [0, 1]; `patch_norm` es un z-score sin
+unidades; en todos, mayor = más anómalo. En eval se usa z = μ, así que los scores son deterministas.
 
 ### Salidas por experimento
 
 ```text
 reports/experiments/vae/<experiment_id>/config.yaml      configuración resuelta, versión y SHA256 de splits
 reports/experiments/vae/<experiment_id>/history.csv      β, pérdida/reconstrucción/KL de train y val, PR-AUC val por época
-reports/experiments/vae/<experiment_id>/metrics.json     métricas por split y score, desglose, thresholds, latencia, VRAM
-reports/experiments/vae/<experiment_id>/predictions.csv  contrato de 7 columnas + y_score_global, y_score_patch, group, country
+reports/experiments/vae/<experiment_id>/metrics.json     métricas por split y score, desglose, thresholds, stats por posición,
+                                                         latencia, VRAM
+reports/experiments/vae/<experiment_id>/predictions.csv  contrato de 7 columnas + y_score_global, y_score_patch,
+                                                         y_score_patch_norm, group, country
 checkpoints/vae/<experiment_id>/best.pt                  fuera de Git; compartir por Drive
 ```
 
@@ -476,7 +487,7 @@ falsos positivos por clase de daño sin D40 (una imagen con varias clases cuenta
 ### Limitaciones
 
 - United_States y China_MotorBike no tienen imágenes sin daño: comparar dentro de cada país.
-- A 128×128 un D40 de Norway mide ~4×4 px.
+- Un D40 de Norway mide ~3 px a 128 y ~11 px a 512.
 - `test_perspective` tiene solo 5 imágenes sin daño.
 - El threshold de F1 máximo puede quedar degenerado (marcar casi todo) cuando el score no separa D40.
 

@@ -1,14 +1,16 @@
 """Train the convolutional VAE on dataset_v1 train images without annotated damage and evaluate every split.
 
 Checkpoint: lowest val loss on no-damage images at beta=1 (unsupervised), only once the beta warmup ended.
-Threshold: max val F1 for D40, per score (global / patch); the primary score is the one with higher val PR-AUC.
-Test splits never influence the checkpoint, the threshold or the primary score.
+Scores: global, patch and patch_norm (patch errors standardized per position with stats from train no-damage
+images). Threshold: max val F1 for D40 per score; the primary score is the one with the highest val PR-AUC.
+Test splits never influence the checkpoint, the position stats, the thresholds or the primary score.
 """
 import argparse
 import json
 import time
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import torch
 import yaml
@@ -21,18 +23,33 @@ from src.data.dataset import (DATASET_ROOT, MANIFESTS, PotholeDataset, build_tra
 from src.evaluation.breakdown import damage_group, group_report
 from src.evaluation.latency import measure_latency
 from src.evaluation.metrics import best_f1_threshold, prediction_frame, split_metrics
-from src.models.vae import ConvVAE, anomaly_scores, vae_loss, vae_terms
+from src.models.vae import anomaly_scores, build_vae, normalized_max, position_stats, vae_loss, vae_terms
 from src.utils.seed import safe_experiment_id, set_seed
 
 ROOT = Path(__file__).resolve().parents[2]
 REPORTS = ROOT / "reports/experiments/vae"
 CHECKPOINTS = ROOT / "checkpoints/vae"
 EVAL_SPLITS = ("val", "test_id", "test_ood", "test_perspective")
-SCORES = ("global", "patch")
-DEFAULTS = dict(latent=128, image_size=128, batch_size=64, epochs=50, lr=1e-3, patience=8, warmup_epochs=5,
-                patch=16, num_workers=2, seed=42, amp=True, use_cache=True, latency_images=200)
-SCORE_SCALE = ("squared error per pixel in [0, 1] RGB space, averaged over channels; global = image mean, "
-               "patch = max of the patch-averaged error; higher = more anomalous")
+EPOCH_SCORES = ("global", "patch")
+SCORES = (*EPOCH_SCORES, "patch_norm")  # patch_norm necesita las stats de train, solo existe al final
+DEFAULTS = dict(latent=128, image_size=128, patch_size=None, batch_size=64, epochs=50, lr=1e-3, patience=8,
+                warmup_epochs=5, patch=16, std_floor_frac=0.1, num_workers=2, seed=42, amp=True, use_cache=True,
+                latency_images=200)
+SCORE_SCALE = ("global and patch: squared error per pixel in [0, 1] RGB space, averaged over channels "
+               "(global = image mean, patch = max of the patch-averaged error); patch_norm: unitless z-score, "
+               "max over positions of (patch error - train no-damage mean) / floored std; higher = more anomalous")
+
+
+def validate_config(config):
+    """Fail before loading any data when sizes or the warmup cannot work together."""
+    if config["warmup_epochs"] > config["epochs"]:
+        raise ValueError("warmup_epochs must not exceed epochs, otherwise beta never reaches 1")
+    if config["image_size"] % config["patch"]:
+        raise ValueError("image_size must be divisible by patch (scoring cells would drop pixels)")
+    tile = config["patch_size"]
+    if tile is not None and (config["image_size"] % tile or tile % config["patch"]):
+        # celdas de score que cruzan bordes de parche miden la costura, no el pavimento
+        raise ValueError("image_size must be divisible by patch_size, and patch_size by patch")
 
 
 def beta_at(epoch, warmup):
@@ -87,20 +104,22 @@ def train_epoch(model, loader, optimizer, scaler, device, amp, beta):
 
 @torch.no_grad()
 def score_images(model, loader, device, amp, patch):
-    """Per image: sample_id, has_D40, reconstruction and KL terms, and both anomaly scores (z = mu)."""
+    """Per image (z = mu): sample_id, has_D40, reconstruction/KL terms and global/patch scores,
+    plus the patch error grid as an array aligned with the rows."""
     model.eval()
-    parts = []
+    parts, grids = [], []
     for images, labels, sample_ids in tqdm(loader, desc="score", leave=False):
         images = images.to(device, non_blocking=True)
         with torch.autocast(device.type, enabled=amp):
             recon, mu, logvar = model(images)
         reconstruction, kl = vae_terms(recon, images, mu, logvar)
-        global_score, patch_score = anomaly_scores(images, recon, patch, patch)
+        global_score, patch_score, grid = anomaly_scores(images, recon, patch, patch)
         parts.append(pd.DataFrame(dict(sample_id=list(sample_ids), y_true=labels[:, 0].int().numpy(),
                                        recon=reconstruction.cpu().numpy(), kl=kl.cpu().numpy(),
                                        global_score=global_score.cpu().numpy(),
                                        patch_score=patch_score.cpu().numpy())))
-    return pd.concat(parts, ignore_index=True)
+        grids.append(grid.cpu().numpy())
+    return pd.concat(parts, ignore_index=True), np.concatenate(grids)
 
 
 def val_summary(scored, normal_ids):
@@ -108,7 +127,7 @@ def val_summary(scored, normal_ids):
     normal = scored[scored.sample_id.isin(normal_ids)]
     summary = dict(val_loss=float((normal.recon + normal.kl).mean()), val_recon=float(normal.recon.mean()),
                    val_kl=float(normal.kl.mean()))
-    for name in SCORES:
+    for name in EPOCH_SCORES:
         summary[f"val_pr_auc_{name}"] = float(average_precision_score(scored.y_true, scored[f"{name}_score"]))
     return summary
 
@@ -116,8 +135,7 @@ def val_summary(scored, normal_ids):
 def train(config, manifests=MANIFESTS, dataset_root=DATASET_ROOT, reports=REPORTS,
           checkpoints=CHECKPOINTS, limit=None, device=None):
     config = {**DEFAULTS, **config}
-    if config["warmup_epochs"] > config["epochs"]:
-        raise ValueError("warmup_epochs must not exceed epochs, otherwise beta never reaches 1")
+    validate_config(config)
     experiment_id = safe_experiment_id(config["experiment_id"]) + (f"_limit{limit}" if limit else "")
     device = torch.device(device or ("cuda" if torch.cuda.is_available() else "cpu"))
     amp = config["amp"] and device.type == "cuda"
@@ -141,7 +159,7 @@ def train(config, manifests=MANIFESTS, dataset_root=DATASET_ROOT, reports=REPORT
     print(f"{experiment_id}: {len(train_loader.dataset)} train (no damage) / {len(val_loader.dataset)} val "
           f"({len(val_normals)} no damage), device={device}")
 
-    model = ConvVAE(latent=config["latent"], image_size=config["image_size"]).to(device)
+    model = build_vae(config["latent"], config["image_size"], config["patch_size"]).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=config["lr"])
     scaler = torch.amp.GradScaler(device.type, enabled=amp)
     if device.type == "cuda":
@@ -154,7 +172,7 @@ def train(config, manifests=MANIFESTS, dataset_root=DATASET_ROOT, reports=REPORT
     for epoch in range(1, config["epochs"] + 1):
         start, beta = time.time(), beta_at(epoch, config["warmup_epochs"])
         train_stats = train_epoch(model, train_loader, optimizer, scaler, device, amp, beta)
-        val_stats = val_summary(score_images(model, val_loader, device, amp, config["patch"]), val_normals)
+        val_stats = val_summary(score_images(model, val_loader, device, amp, config["patch"])[0], val_normals)
         history.append(dict(epoch=epoch, beta=beta, **{f"train_{k}": v for k, v in train_stats.items()},
                             **val_stats, lr=optimizer.param_groups[0]["lr"], seconds=time.time() - start))
         print(f"epoch {epoch:02d} beta={beta:.2f} train_loss={train_stats['loss']:.2f} "
@@ -172,11 +190,18 @@ def train(config, manifests=MANIFESTS, dataset_root=DATASET_ROOT, reports=REPORT
     peak_mb = torch.cuda.max_memory_allocated(device) / 2 ** 20 if device.type == "cuda" else None
 
     model.load_state_dict(torch.load(ckpt_dir / "best.pt", map_location=device, weights_only=True)["model"])
+    # stats por posicion solo con train sin dano, ya con el checkpoint elegido
+    stats_loader = loader_for(train_images, shuffle=False)
+    stats = position_stats(score_images(model, stats_loader, device, amp, config["patch"])[1],
+                           config["std_floor_frac"])
+    del stats_loader, train_loader
     scored = {}
     for split in EVAL_SPLITS:
         loader = val_loader if split == "val" else loader_for(eval_images[eval_images.split == split], shuffle=False)
-        scored[split] = score_images(model, loader, device, amp, config["patch"]).merge(
-            eval_frame, on="sample_id", validate="one_to_one")
+        table, grids = score_images(model, loader, device, amp, config["patch"])
+        table["patch_norm_score"] = normalized_max(grids, stats["mean"], stats["std_eff"])
+        scored[split] = table.merge(eval_frame, on="sample_id", validate="one_to_one")
+        del loader  # en windows los workers persistentes quedan vivos si no se suelta el loader
 
     # todo lo que se elige sale de val
     val = scored["val"]
@@ -192,27 +217,33 @@ def train(config, manifests=MANIFESTS, dataset_root=DATASET_ROOT, reports=REPORT
         predictions = prediction_frame(table.sample_id, split, table.y_true, table[f"{primary}_score"],
                                        thresholds[primary], experiment_id, release["dataset_version"])
         rows.append(predictions.assign(y_score_global=table.global_score, y_score_patch=table.patch_score,
-                                       group=damage_group(table), country=table.country))
+                                       y_score_patch_norm=table.patch_norm_score, group=damage_group(table),
+                                       country=table.country))
         print(f"{split}: " + ", ".join(f"{name} pr_auc={results[split][name]['pr_auc']:.4f} "
                                        f"f1={results[split][name]['f1']:.4f}" for name in SCORES))
     pd.concat(rows).to_csv(out_dir / "predictions.csv", index=False, lineterminator="\n")
 
     latency_set = PotholeDataset(eval_images[eval_images.split == "test_id"], transform, root)
-    latency = {"batch_size": 1, "image_size": config["image_size"],
-               "includes": "forward pass only (z = mu), preprocessed input"}
+    latency = {"batch_size": 1, "image_size": config["image_size"], "patch_size": config["patch_size"],
+               "includes": "forward pass only (z = mu), preprocessed input; scoring not included"}
     if device.type == "cuda":
         latency["cuda_ms"] = measure_latency(model, latency_set, device, config["latency_images"])
     latency["cpu_ms"] = measure_latency(model, latency_set, torch.device("cpu"), config["latency_images"] // 4)
 
+    cells = config["image_size"] // config["patch"]
+    stats_report = {key: value.tolist() if isinstance(value, np.ndarray) else value for key, value in stats.items()}
+    stats_report.update(grid=[cells, cells], source="train images without annotated damage, best checkpoint, z = mu")
     metrics = dict(experiment_id=experiment_id, primary_score=primary, thresholds=thresholds,
                    val_pr_auc=val_pr_auc, best_epoch=best_epoch, best_val_loss=best_loss, splits=results,
-                   breakdown=breakdown, latency=latency, cuda_peak_mb=peak_mb)
+                   breakdown=breakdown, position_stats=stats_report, latency=latency, cuda_peak_mb=peak_mb)
     (out_dir / "metrics.json").write_text(json.dumps(metrics, indent=2) + "\n", encoding="utf-8")
     resolved = {**config, "experiment_id": experiment_id, "optimizer": "Adam", "scheduler": None,
                 "loss": "per-image sum of squared error + beta * KL, averaged over the batch",
                 "beta_schedule": f"linear 0 -> 1 over {config['warmup_epochs']} epochs",
                 "selection": "min val loss (beta=1) on val images without annotated damage, after warmup",
-                "threshold": "max val F1 (D40) per score; primary score = higher val PR-AUC (D40)",
+                "threshold": "max val F1 (D40) per score; primary score = highest val PR-AUC (D40)",
+                "position_stats": "per-position mean/std of the patch grid on train no-damage images, "
+                                  f"std floored at {config['std_floor_frac']} x median std",
                 "score_scale": SCORE_SCALE, "image_source": root.name, "train_images": len(train_frame),
                 "val_no_damage_images": len(val_normals), "best_epoch": best_epoch, "limit": limit,
                 "device": str(device), "torch": str(torch.__version__), **release}
