@@ -6,10 +6,15 @@ El proyecto utiliza **RDD2022** como dataset principal y compara enfoques de:
 
 - **Transfer Learning** con ResNet18 preentrenada.
 - ResNet18 entrenada **desde cero**.
+- **EfficientNet-B0 preentrenada**, segundo clasificador supervisado con el mismo protocolo que ResNet18.
 - **Data augmentation** para reducir sensibilidad al cambio de dominio.
 - **Variational Autoencoder (VAE)** para detección de anomalías.
 - **XAI / Grad-CAM** para interpretar predicciones y errores.
 - Evaluación **in-distribution**, **out-of-distribution (OOD)** y posteriormente en un conjunto externo de Guatemala.
+
+EfficientNet está implementada e integrada con evaluación, latencia y Grad-CAM; su entrenamiento
+real está pendiente de disponer de las imágenes. Ver [protocolo y comandos](docs/EFFICIENTNET.md).
+Los resultados negativos del VAE se conservan, no se sustituyen por métricas sintéticas.
 
 ---
 
@@ -393,4 +398,3 @@ Consulta [TEAM_GUIDE.md](TEAM_GUIDE.md) y [docs/HANDOFF.md](docs/HANDOFF.md)
 antes de comenzar una rama de trabajo.
 
 ---
-

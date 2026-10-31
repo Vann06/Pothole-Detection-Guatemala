@@ -1,7 +1,8 @@
-"""Train ResNet18 for D40 presence on dataset_v1, select on val and evaluate every held-out split.
+"""Train ResNet18 or EfficientNet-B0 for D40 on the same frozen data and selection protocol.
 
 With aux_classes (e.g. [D00, D10, D20]) the network also predicts those damages as auxiliary tasks;
 D40 stays the primary target for checkpoint selection, threshold and reported metrics.
+The original module/CLI name is retained for existing ResNet commands.
 """
 import argparse
 import json
@@ -11,6 +12,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import torch
+import torchvision
 import yaml
 from sklearn.metrics import average_precision_score
 from torch import nn
@@ -20,14 +22,14 @@ from src.data.dataset import (DATASET_ROOT, MANIFESTS, PotholeDataset, build_tra
                               label_columns, load_split_frame, make_loader, release_info)
 from src.evaluation.latency import measure_latency
 from src.evaluation.metrics import best_f1_threshold, prediction_frame, split_metrics
-from src.models.resnet import build_resnet18
-from src.utils.seed import set_seed
+from src.models.classifiers import CLASSIFIER_ARCHITECTURES, build_classifier
+from src.utils.seed import safe_experiment_id, set_seed
 
 ROOT = Path(__file__).resolve().parents[2]
 REPORTS = ROOT / "reports/experiments/resnet"
 CHECKPOINTS = ROOT / "checkpoints/resnet"
 EVAL_SPLITS = ("val", "test_id", "test_ood", "test_perspective")
-DEFAULTS = dict(pretrained=False, augment=False, image_size=224, batch_size=32, epochs=20, lr=1e-4,
+DEFAULTS = dict(family="resnet", pretrained=False, augment=False, image_size=224, batch_size=32, epochs=20, lr=1e-4,
                 weight_decay=1e-4, patience=5, num_workers=4, seed=42, amp=True, latency_images=200,
                 aux_classes=[], aux_weight=0.0)
 
@@ -79,10 +81,16 @@ def predict(model, loader, criterion, device, amp):
     return total / len(loader.dataset), ids, np.concatenate(labels).astype(int), np.concatenate(scores)
 
 
-def train(config, manifests=MANIFESTS, dataset_root=DATASET_ROOT, reports=REPORTS,
-          checkpoints=CHECKPOINTS, limit=None, device=None):
+def train(config, manifests=MANIFESTS, dataset_root=DATASET_ROOT, reports=None,
+          checkpoints=None, limit=None, device=None):
     config = {**DEFAULTS, **config}
-    experiment_id = config["experiment_id"] + (f"_limit{limit}" if limit else "")
+    family = config["family"]
+    if family not in CLASSIFIER_ARCHITECTURES:
+        raise ValueError(f"Unknown classifier family: {family}")
+    config["architecture"] = CLASSIFIER_ARCHITECTURES[family]
+    reports = Path(reports) if reports is not None else ROOT / "reports/experiments" / family
+    checkpoints = Path(checkpoints) if checkpoints is not None else ROOT / "checkpoints" / family
+    experiment_id = safe_experiment_id(config["experiment_id"]) + (f"_limit{limit}" if limit else "")
     device = torch.device(device or ("cuda" if torch.cuda.is_available() else "cpu"))
     amp = config["amp"] and device.type == "cuda"
     set_seed(config["seed"])
@@ -90,6 +98,10 @@ def train(config, manifests=MANIFESTS, dataset_root=DATASET_ROOT, reports=REPORT
     frame = load_split_frame(manifests=manifests)
     if limit:
         frame = frame.sample(frac=1, random_state=config["seed"]).groupby("split").head(limit)
+    missing = [p for p in frame.image_path if not (Path(dataset_root) / p).is_file()]
+    if missing:
+        raise FileNotFoundError(f"Missing {len(missing)} RDD2022 images under {dataset_root}; first: {missing[0]}. "
+                                "Install dataset_v1 before training; manifests alone contain no image pixels.")
     columns = label_columns(config["aux_classes"])
     pos_weights = {column: compute_pos_weight(frame, column) for column in columns}
     size = config["image_size"]
@@ -105,7 +117,7 @@ def train(config, manifests=MANIFESTS, dataset_root=DATASET_ROOT, reports=REPORT
     print(f"{experiment_id}: {len(train_loader.dataset)} train / {len(val_loader.dataset)} val, "
           f"pos_weight={ {k: round(v, 3) for k, v in pos_weights.items()} }, device={device}")
 
-    model = build_resnet18(config["pretrained"], outputs=len(columns)).to(device)
+    model = build_classifier(family, config["pretrained"], outputs=len(columns)).to(device)
     criterion = AuxiliaryLoss(list(pos_weights.values()), config["aux_weight"]).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=config["lr"], weight_decay=config["weight_decay"])
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=config["epochs"])
@@ -143,7 +155,8 @@ def train(config, manifests=MANIFESTS, dataset_root=DATASET_ROOT, reports=REPORT
         if threshold is None:  # val comes first: the threshold is fixed there and reused on every test split
             threshold = best_f1_threshold(y_true[:, 0], y_score[:, 0])
         results[split] = split_metrics(y_true[:, 0], y_score[:, 0], threshold)
-        table = prediction_frame(ids, split, y_true[:, 0], y_score[:, 0], threshold, experiment_id,
+        # Serialize probabilities as float64 to preserve their exact float32 values at the threshold.
+        table = prediction_frame(ids, split, y_true[:, 0], y_score[:, 0].astype(np.float64), threshold, experiment_id,
                                  release["dataset_version"])
         if config["aux_classes"]:
             results[split]["auxiliary"] = {}
@@ -168,7 +181,11 @@ def train(config, manifests=MANIFESTS, dataset_root=DATASET_ROOT, reports=REPORT
                 "loss": "BCEWithLogitsLoss(D40) + aux_weight * mean BCE(aux)" if config["aux_classes"]
                 else "BCEWithLogitsLoss", "pos_weight": pos_weights[columns[0]], "pos_weights": pos_weights,
                 "best_epoch": best_epoch, "selection": "max val PR-AUC (D40); threshold = max val F1 (D40)",
-                "limit": limit, "device": str(device), "torch": str(torch.__version__), **release}
+                "preprocessing": "RGB, full-frame bilinear resize, ImageNet mean/std; no evaluation crop",
+                "weights": "IMAGENET1K_V1" if config["pretrained"] else None,
+                "trainable": "all parameters", "parameters": sum(p.numel() for p in model.parameters()),
+                "limit": limit, "device": str(device), "torch": str(torch.__version__),
+                "torchvision": str(torchvision.__version__), **release}
     (out_dir / "config.yaml").write_text(yaml.safe_dump(resolved, sort_keys=False), encoding="utf-8")
     print(f"results in {out_dir}")
     return metrics
@@ -179,12 +196,13 @@ def main():
     parser.add_argument("--config", required=True, type=Path)
     parser.add_argument("--limit", type=int, help="Use at most N images per split (smoke runs)")
     parser.add_argument("--epochs", type=int, help="Override epochs from the config")
-    parser.add_argument("--device", help="cuda or cpu; defaults to cuda when available")
+    parser.add_argument("--dataset-root", type=Path, default=DATASET_ROOT)
+    parser.add_argument("--device", choices=["cuda", "cpu", "mps"], help="Defaults to CUDA when available, otherwise CPU")
     args = parser.parse_args()
     config = yaml.safe_load(args.config.read_text(encoding="utf-8"))
     if args.epochs:
         config["epochs"] = args.epochs
-    train(config, limit=args.limit, device=args.device)
+    train(config, dataset_root=args.dataset_root, limit=args.limit, device=args.device)
 
 
 if __name__ == "__main__":

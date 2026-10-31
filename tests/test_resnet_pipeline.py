@@ -11,7 +11,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import torch
+import yaml
 from PIL import Image
+from torchvision import transforms as T
 
 PROJECT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT))
@@ -19,6 +21,10 @@ sys.path.insert(0, str(PROJECT))
 from src.data.dataset import build_transforms, compute_pos_weight, load_split_frame, PotholeDataset  # noqa: E402
 from src.models.resnet import build_resnet18  # noqa: E402
 from src.models.train_resnet import AuxiliaryLoss, train  # noqa: E402
+from src.data.dataset import release_info  # noqa: E402
+from src.evaluation.cross_domain import load_experiment, metric_row  # noqa: E402
+from src.evaluation.inference import load_checkpoint, predict_frame  # noqa: E402
+from src.xai.gradcam import gradcam  # noqa: E402
 
 SPLITS = ("train", "val", "test_id", "test_ood", "test_perspective")
 PER_SPLIT = 8
@@ -132,6 +138,59 @@ class ResNetPipelineTests(unittest.TestCase):
         images = pd.read_csv(self.manifests / "images.csv").set_index("sample_id")
         self.assertTrue((predictions.y_true.to_numpy() == images.loc[predictions.sample_id, "has_D40"].to_numpy()).all())
         self.assertEqual(set(metrics["splits"]["test_ood"]["auxiliary"]), {"D00", "D10", "D20"})
+
+    def test_efficientnet_training_reload_xai_and_test_isolation(self):
+        torch.set_num_threads(2)
+        config = dict(experiment_id="efficientnet_synthetic", family="efficientnet", pretrained=False,
+                      epochs=2, batch_size=4, image_size=64, num_workers=0, amp=False, latency_images=0)
+        reports = self.root / "reports/efficientnet"
+        with contextlib.redirect_stdout(io.StringIO()):
+            train(config, manifests=self.manifests, dataset_root=self.images_root,
+                  reports=reports, checkpoints=self.root / "ckpt", device="cpu")
+        out = reports / config["experiment_id"]
+        frame = load_split_frame(manifests=self.manifests)
+        table, resolved, metadata = load_experiment(out, frame, release_info(self.manifests))
+        checkpoint = self.root / "ckpt" / config["experiment_id"] / "best.pt"
+        model = load_checkpoint(checkpoint, resolved, "efficientnet")
+        self.assertEqual(resolved["architecture"], "efficientnet_b0")
+        self.assertEqual(len(table), 4 * PER_SPLIT)
+        for split, group in table.groupby("split"):
+            actual = metric_row(group)
+            self.assertEqual({k: actual[k] for k in ("tn", "fp", "fn", "tp")},
+                             metadata["splits"][split]["confusion_matrix"])
+        val = frame[frame.split == "val"].head(3)
+        scores, dataset = predict_frame(model, val, self.images_root, "efficientnet", resolved, metadata, "cpu")
+        np.testing.assert_allclose(scores, table.set_index("sample_id").loc[val.sample_id, "y_score"], atol=1e-6)
+        # Independent preprocessing expectation catches routing EfficientNet through VAE's unnormalized path.
+        with Image.open(self.images_root / val.image_path.iloc[0]) as image:
+            expected = T.Compose([T.Resize((64, 64)), T.ToTensor(),
+                                  T.Normalize((.485, .456, .406), (.229, .224, .225))])(image.convert("RGB"))
+        self.assertTrue(torch.equal(dataset[0][0], expected))
+        cam = gradcam(model, dataset[0][0], model.features[-1])
+        self.assertEqual(cam["heatmap"].shape, (64, 64))
+        self.assertTrue(np.isfinite(cam["heatmap"]).all())
+        self.assertAlmostEqual(cam["probability"], scores[0], places=6)
+        with self.assertRaises(ValueError): load_checkpoint(checkpoint, resolved, "resnet")
+        before = torch.load(checkpoint, weights_only=True)
+        # Competing interpretation: select/tune on external labels. It MUST leave weights/threshold unchanged.
+        changed = pd.read_csv(self.manifests / "images.csv")
+        external = changed.sample_id.str.startswith(("test_id", "test_ood", "test_perspective"))
+        changed.loc[external, "has_D40"] = 1-changed.loc[external, "has_D40"]
+        changed.to_csv(self.manifests / "images.csv", index=False)
+        with contextlib.redirect_stdout(io.StringIO()):
+            second = train(config, manifests=self.manifests, dataset_root=self.images_root,
+                           reports=self.root / "second", checkpoints=self.root / "second_ckpt", device="cpu")
+        after = torch.load(self.root / "second_ckpt" / config["experiment_id"] / "best.pt", weights_only=True)
+        self.assertEqual(second["threshold"], metadata["threshold"])
+        self.assertEqual(second["best_epoch"], metadata["best_epoch"])
+        self.assertTrue(all(torch.equal(before["model"][key], after["model"][key]) for key in before["model"]))
+
+    def test_efficientnet_config_matches_resnet_control(self):
+        reference = yaml.safe_load((PROJECT / "configs/resnet/exp2_pretrained.yaml").read_text())
+        candidate = yaml.safe_load((PROJECT / "configs/efficientnet/exp1_pretrained.yaml").read_text())
+        for key in ("pretrained", "augment", "image_size", "batch_size", "epochs", "lr", "weight_decay",
+                    "patience", "num_workers", "seed", "amp"):
+            self.assertEqual(candidate[key], reference[key], key)
 
 
 if __name__ == "__main__":
