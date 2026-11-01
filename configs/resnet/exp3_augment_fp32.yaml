@@ -1,0 +1,17 @@
+# Experimento 3: mejor configuración de exp1/exp2 (por PR-AUC en val, nunca test) + augmentation.
+# Por defecto asume que gana exp2; si gana exp1 copiar pretrained/lr/epochs/patience de exp1_scratch.yaml.
+# Variante fp32 (amp: false) para GTX 1650: AMP deja NaN en BatchNorm. Ver exp2_pretrained_fp32.yaml.
+# Épocas/paciencia igualadas a exp2_pretrained_fp32 (15/4) para que la única diferencia sea augment.
+experiment_id: exp3_augment_fp32
+based_on: exp2_pretrained_fp32
+pretrained: true
+augment: true
+image_size: 224
+batch_size: 32
+epochs: 15
+lr: 0.0001
+weight_decay: 0.0001
+patience: 4
+num_workers: 4
+seed: 42
+amp: false

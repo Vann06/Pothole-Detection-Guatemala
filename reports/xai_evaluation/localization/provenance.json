@@ -1,0 +1,23 @@
+{
+  "dataset_version": "dataset_v1",
+  "splits": [
+    "test_id",
+    "test_ood",
+    "test_perspective"
+  ],
+  "target": "D40 logit (output 0)",
+  "images": "every official D40-positive image of the splits, identical for all models",
+  "metrics": "mass_in_boxes = Grad-CAM mass inside the union of D40 boxes; mass_over_area > 1 means more mass than a uniform map; peak_in_box = maximum lies inside a D40 box",
+  "models": [
+    {
+      "experiment_id": "exp2_pretrained_fp32",
+      "family": "resnet",
+      "checkpoint_sha256": "15909aa6568814d2d95735468eefaf9465440bd350ad7ec14113914d2251ae35"
+    },
+    {
+      "experiment_id": "exp5_res384",
+      "family": "resnet",
+      "checkpoint_sha256": "4687e9ed56d82cb3c224ed268c2e9cb7df7c50c195e6587d9d3bacef5412ad36"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "selected": "exp5_res384_seed43",
+  "experiments": [
+    "exp5_res384_seed43",
+    "exp5_res384",
+    "exp5_res384_seed44",
+    "exp3_augment_fp32",
+    "exp2_pretrained_fp32"
+  ],
+  "images": 12,
+  "positives": 6,
+  "negatives": 6,
+  "note": "Qualitative check on unreviewed external photos; not a test split, no threshold tuning."
+}

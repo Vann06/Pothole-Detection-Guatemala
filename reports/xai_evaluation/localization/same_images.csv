@@ -1,0 +1,7 @@
+split,sample_id,image_path
+test_id,India__India_004553,India/India/train/images/India_004553.jpg
+test_id,India__India_005294,India/India/train/images/India_005294.jpg
+test_ood,Norway__Norway_005195,Norway/train/images/Norway_005195.jpg
+test_ood,Norway__Norway_004013,Norway/train/images/Norway_004013.jpg
+test_perspective,China_Drone__China_Drone_002041,China_Drone/China_Drone/train/images/China_Drone_002041.jpg
+test_perspective,China_Drone__China_Drone_002145,China_Drone/China_Drone/train/images/China_Drone_002145.jpg

@@ -1,0 +1,14 @@
+# Experimento 1: ResNet18 desde cero
+# Variante fp32 (amp: false) para GTX 1650: AMP deja NaN en BatchNorm. Ver exp2_pretrained_fp32.yaml.
+experiment_id: exp1_scratch_fp32
+pretrained: false
+augment: false
+image_size: 224
+batch_size: 32
+epochs: 30
+lr: 0.001
+weight_decay: 0.0001
+patience: 6
+num_workers: 2
+seed: 42
+amp: false

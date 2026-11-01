@@ -1,0 +1,6 @@
+experiment_id,TP,FN,FP,TN
+exp2_pretrained_fp32,4,2,0,6
+exp3_augment_fp32,3,3,0,6
+exp5_res384,5,1,1,5
+exp5_res384_seed43,4,2,0,6
+exp5_res384_seed44,4,2,0,6

@@ -1,4 +1,18 @@
 experiment_id,device,reported_median_ms,image_size,scope,comparability
+exp1_scratch_fp32,cpu,63.42824999956065,224,"forward pass only, preprocessed input",unverified: hardware/warmup/sample count not recorded
+exp1_scratch_fp32,cuda,4.915399998935754,224,"forward pass only, preprocessed input",unverified: hardware/warmup/sample count not recorded
+exp2_pretrained_fp32,cpu,32.042699996964075,224,"forward pass only, preprocessed input",unverified: hardware/warmup/sample count not recorded
+exp2_pretrained_fp32,cuda,5.999500001053093,224,"forward pass only, preprocessed input",unverified: hardware/warmup/sample count not recorded
+exp3_augment_fp32,cpu,29.75585000058345,224,"forward pass only, preprocessed input",unverified: hardware/warmup/sample count not recorded
+exp3_augment_fp32,cuda,5.63250000050175,224,"forward pass only, preprocessed input",unverified: hardware/warmup/sample count not recorded
+exp4_auxiliary_fp32,cpu,29.72589999990305,224,"forward pass only, preprocessed input",unverified: hardware/warmup/sample count not recorded
+exp4_auxiliary_fp32,cuda,5.616349999399972,224,"forward pass only, preprocessed input",unverified: hardware/warmup/sample count not recorded
+exp5_res384,cpu,70.3429999994114,384,"forward pass only, preprocessed input",unverified: hardware/warmup/sample count not recorded
+exp5_res384,cuda,6.262949995289091,384,"forward pass only, preprocessed input",unverified: hardware/warmup/sample count not recorded
+exp5_res384_seed43,cpu,66.24010000086855,384,"forward pass only, preprocessed input",unverified: hardware/warmup/sample count not recorded
+exp5_res384_seed43,cuda,6.313049999334908,384,"forward pass only, preprocessed input",unverified: hardware/warmup/sample count not recorded
+exp5_res384_seed44,cpu,67.40465000075346,384,"forward pass only, preprocessed input",unverified: hardware/warmup/sample count not recorded
+exp5_res384_seed44,cuda,6.393599998773425,384,"forward pass only, preprocessed input",unverified: hardware/warmup/sample count not recorded
 efficientnet_b0_pretrained,cpu,230.3394374976051,224,"forward pass only, preprocessed input",unverified: hardware/warmup/sample count not recorded
 vae_base,cpu,9.320800003479235,128,"forward pass only (z = mu), preprocessed input; scoring not included",unverified: hardware/warmup/sample count not recorded
 vae_base,cuda,2.2835500130895525,128,"forward pass only (z = mu), preprocessed input; scoring not included",unverified: hardware/warmup/sample count not recorded

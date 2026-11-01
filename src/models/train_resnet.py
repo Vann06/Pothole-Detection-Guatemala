@@ -82,7 +82,7 @@ def predict(model, loader, criterion, device, amp):
 
 
 def train(config, manifests=MANIFESTS, dataset_root=DATASET_ROOT, reports=None,
-          checkpoints=None, limit=None, device=None):
+          checkpoints=None, limit=None, device=None, evaluate_only=False):
     config = {**DEFAULTS, **config}
     family = config["family"]
     if family not in CLASSIFIER_ARCHITECTURES:
@@ -127,7 +127,15 @@ def train(config, manifests=MANIFESTS, dataset_root=DATASET_ROOT, reports=None,
     out_dir.mkdir(parents=True, exist_ok=True)
     ckpt_dir.mkdir(parents=True, exist_ok=True)
     history, best_auc, best_epoch = [], -1.0, 0
-    for epoch in range(1, config["epochs"] + 1):
+    if evaluate_only:
+        # Resume an interrupted run: reuse the selected checkpoint and the saved history, never retrain.
+        saved = torch.load(ckpt_dir / "best.pt", map_location="cpu", weights_only=True)
+        history = pd.read_csv(out_dir / "history.csv").to_dict("records")
+        if saved["config"] != config or saved["epoch"] != max(history, key=lambda h: h["val_pr_auc"])["epoch"]:
+            raise ValueError("Checkpoint/history do not match this config; retrain instead of evaluating")
+        best_epoch = saved["epoch"]
+        print(f"evaluate-only: checkpoint epoch {best_epoch} from {ckpt_dir / 'best.pt'}")
+    for epoch in range(1, 0 if evaluate_only else config["epochs"] + 1):
         start = time.time()
         lr = optimizer.param_groups[0]["lr"]
         train_loss = train_epoch(model, train_loader, criterion, optimizer, scaler, device, amp)
@@ -198,11 +206,14 @@ def main():
     parser.add_argument("--epochs", type=int, help="Override epochs from the config")
     parser.add_argument("--dataset-root", type=Path, default=DATASET_ROOT)
     parser.add_argument("--device", choices=["cuda", "cpu", "mps"], help="Defaults to CUDA when available, otherwise CPU")
+    parser.add_argument("--evaluate-only", action="store_true",
+                        help="Skip training; evaluate the saved best.pt of an interrupted run (needs its history.csv)")
     args = parser.parse_args()
     config = yaml.safe_load(args.config.read_text(encoding="utf-8"))
     if args.epochs:
         config["epochs"] = args.epochs
-    train(config, dataset_root=args.dataset_root, limit=args.limit, device=args.device)
+    train(config, dataset_root=args.dataset_root, limit=args.limit, device=args.device,
+          evaluate_only=args.evaluate_only)
 
 
 if __name__ == "__main__":

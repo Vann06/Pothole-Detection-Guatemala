@@ -1,0 +1,74 @@
+{
+  "experiment_id": "exp1_scratch_fp32",
+  "threshold": 0.428709477186203,
+  "best_epoch": 22,
+  "splits": {
+    "val": {
+      "n": 4173,
+      "positives": 504,
+      "prevalence": 0.1207764198418404,
+      "precision": 0.4413145539906103,
+      "recall": 0.5595238095238095,
+      "f1": 0.49343832020997375,
+      "pr_auc": 0.5136703237211809,
+      "confusion_matrix": {
+        "tn": 3312,
+        "fp": 357,
+        "fn": 222,
+        "tp": 282
+      }
+    },
+    "test_id": {
+      "n": 4174,
+      "positives": 502,
+      "prevalence": 0.12026832774317202,
+      "precision": 0.4214618973561431,
+      "recall": 0.5398406374501992,
+      "f1": 0.4733624454148472,
+      "pr_auc": 0.4873959874208217,
+      "confusion_matrix": {
+        "tn": 3300,
+        "fp": 372,
+        "fn": 231,
+        "tp": 271
+      }
+    },
+    "test_ood": {
+      "n": 8161,
+      "positives": 256,
+      "prevalence": 0.031368704815586325,
+      "precision": 0.029944838455476755,
+      "recall": 0.1484375,
+      "f1": 0.0498360655737705,
+      "pr_auc": 0.030351172259662846,
+      "confusion_matrix": {
+        "tn": 6674,
+        "fp": 1231,
+        "fn": 218,
+        "tp": 38
+      }
+    },
+    "test_perspective": {
+      "n": 2401,
+      "positives": 64,
+      "prevalence": 0.026655560183256977,
+      "precision": 0.03330068560235064,
+      "recall": 0.53125,
+      "f1": 0.06267281105990784,
+      "pr_auc": 0.02654586844039631,
+      "confusion_matrix": {
+        "tn": 1350,
+        "fp": 987,
+        "fn": 30,
+        "tp": 34
+      }
+    }
+  },
+  "latency": {
+    "batch_size": 1,
+    "image_size": 224,
+    "includes": "forward pass only, preprocessed input",
+    "cuda_ms": 4.915399998935754,
+    "cpu_ms": 63.42824999956065
+  }
+}

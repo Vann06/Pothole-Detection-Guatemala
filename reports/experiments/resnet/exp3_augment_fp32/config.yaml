@@ -1,0 +1,36 @@
+family: resnet
+pretrained: true
+augment: true
+image_size: 224
+batch_size: 32
+epochs: 15
+lr: 0.0001
+weight_decay: 0.0001
+patience: 4
+num_workers: 4
+seed: 42
+amp: false
+latency_images: 200
+aux_classes: []
+aux_weight: 0.0
+experiment_id: exp3_augment_fp32
+based_on: exp2_pretrained_fp32
+architecture: resnet18
+optimizer: AdamW
+scheduler: CosineAnnealingLR
+loss: BCEWithLogitsLoss
+pos_weight: 7.294718909710392
+pos_weights:
+  has_D40: 7.294718909710392
+best_epoch: 7
+selection: max val PR-AUC (D40); threshold = max val F1 (D40)
+preprocessing: RGB, full-frame bilinear resize, ImageNet mean/std; no evaluation crop
+weights: IMAGENET1K_V1
+trainable: all parameters
+parameters: 11177025
+limit: null
+device: cuda
+torch: 2.5.1+cu121
+torchvision: 0.20.1+cu121
+dataset_version: dataset_v1
+splits_sha256: c7b4690943e597a382ab0f7a8ad1298317f267901476b72111a1b1a8041a8614

@@ -61,3 +61,7 @@ configs/paths.local.yaml
 .dist/
 data/recovery/
 data/external/
+
+# Smoke-test runs (--limit / _limitN): never results, notebooks skip them
+reports/experiments/*/*_limit*/
+reports/xai_evaluation/*_limit*/

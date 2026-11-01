@@ -3,36 +3,92 @@
   "splits_sha256": "c7b4690943e597a382ab0f7a8ad1298317f267901476b72111a1b1a8041a8614",
   "sources": [
     {
+      "family": "resnet",
+      "experiment_id": "exp1_scratch_fp32",
+      "predictions_sha256": "20ad87149b457c1cee84f9b9396ab9caa5d2d68707984e3ee94d3f714beb611d",
+      "config_sha256": "d1fdf1a72787b9ce18891e0df69fbb409abaf20b67f885d0f1957dc501f2aaf9",
+      "external_predictions_sha256": null
+    },
+    {
+      "family": "resnet",
+      "experiment_id": "exp2_pretrained_fp32",
+      "predictions_sha256": "af498b11989d0502bb135ddc7c1c7385d4df6f4e51432757bce45618bd7e1343",
+      "config_sha256": "f3b34db11931367a1140bbea53579b1f01e70450d2dde0effbd9c6a82e9eb8ae",
+      "external_predictions_sha256": null
+    },
+    {
+      "family": "resnet",
+      "experiment_id": "exp3_augment_fp32",
+      "predictions_sha256": "943e7c2d2cc8ba04a5433477538cf0a013c7359f32005423c0b3844619daa30c",
+      "config_sha256": "debd849e563cbb7924855ef2e6c3ad613f5cb38cb0dc72b887f10cbc7cdbdc2d",
+      "external_predictions_sha256": null
+    },
+    {
+      "family": "resnet",
+      "experiment_id": "exp4_auxiliary_fp32",
+      "predictions_sha256": "0e0e4530fd4666dd8d7239fe8fd08eeb8aefc385bbea335fbea4a0ead6ef4bcc",
+      "config_sha256": "4f79e895f4c99f93914095221ce1ba3ea3ee2ed405d5aaaf0d1301fa1b265422",
+      "external_predictions_sha256": null
+    },
+    {
+      "family": "resnet",
+      "experiment_id": "exp5_res384",
+      "predictions_sha256": "0aee00325952d006c30688725d0b0a39c808eb4d061912e07dce041997fe9f1f",
+      "config_sha256": "e71590fa2187c24ff4667be3588fc90c7bf6e5698e22230d99ee8ccd72f90dfc",
+      "external_predictions_sha256": null
+    },
+    {
+      "family": "resnet",
+      "experiment_id": "exp5_res384_seed43",
+      "predictions_sha256": "f1d0bfc9f0b7247921cff3daa8e437e028abf3f15101c7fa2866bb34188881e5",
+      "config_sha256": "93c1e9b068864e4b038658dcc39efba9efc0682d3c9e709dd67dd973f320d015",
+      "external_predictions_sha256": null
+    },
+    {
+      "family": "resnet",
+      "experiment_id": "exp5_res384_seed44",
+      "predictions_sha256": "266946f500f4201a7878f5dbd817a85ce264e44367c8167d544f2e431bbb8d8d",
+      "config_sha256": "74cce9628ec91046dcb53c5e848ab49198d7d00c8863e0286e2e696727b57b47",
+      "external_predictions_sha256": null
+    },
+    {
       "family": "efficientnet",
       "experiment_id": "efficientnet_b0_pretrained",
       "predictions_sha256": "850e3e0c77c072b7d7b1ba52b124d1301aee20d4a23fe0d60ca4e9926228206d",
-      "config_sha256": "8eba2b7de7148ded5734da5a29b480e1281586d6e307513fd591cb3446070884",
+      "config_sha256": "d0a8331de320f1a24dc2cba2c8096c0ffb49c2a9670ac27534267a3a28b1efa1",
       "external_predictions_sha256": null
     },
     {
       "family": "vae",
       "experiment_id": "vae_base",
       "predictions_sha256": "6b34e92e6a30ed8958bac348e0617f7b0337397348c8d6d209e778bfbc76c54a",
-      "config_sha256": "0c069d1671f5f78118f48dcaba4a869e5fa2938b23ac4d8116231b8454f43b73",
+      "config_sha256": "9807e470e90c372dfce17e0f4ab721b3f91e4184e9bf5a266851857292cafd76",
       "external_predictions_sha256": null
     },
     {
       "family": "vae",
       "experiment_id": "vae_patch512",
       "predictions_sha256": "b150e30f2fefe8ea230578cd4773338cd2566db4dfedc3fca62afcaea6d7ebb0",
-      "config_sha256": "100a1fe00bda5fac44db1448157f2211e34f58e1b5652f7653c8bacc29674472",
+      "config_sha256": "f3d63a2b43acefbad6234cc9693e3fbf4f6925c20eaa4cbffcdd5bdf3dffa4f4",
       "external_predictions_sha256": null
     }
   ],
   "selection": "Classifiers: maximum validation AP; lexical ID tie-break",
-  "selected_resnet": null,
+  "selected_resnet": "exp5_res384_seed43",
   "selected_classifier": {
-    "family": "efficientnet",
-    "experiment_id": "efficientnet_b0_pretrained"
+    "family": "resnet",
+    "experiment_id": "exp5_res384_seed43"
   },
   "guatemala_evaluated": [],
   "guatemala_pending": [
     "efficientnet_b0_pretrained",
+    "exp1_scratch_fp32",
+    "exp2_pretrained_fp32",
+    "exp3_augment_fp32",
+    "exp4_auxiliary_fp32",
+    "exp5_res384",
+    "exp5_res384_seed43",
+    "exp5_res384_seed44",
     "vae_base",
     "vae_patch512"
   ],
