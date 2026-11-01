@@ -1,0 +1,31 @@
+latent: 128
+image_size: 128
+batch_size: 64
+epochs: 3
+lr: 0.001
+patience: 8
+warmup_epochs: 1
+patch: 16
+num_workers: 2
+seed: 42
+amp: true
+use_cache: true
+latency_images: 200
+experiment_id: vae_base_limit256
+optimizer: Adam
+scheduler: null
+loss: per-image sum of squared error + beta * KL, averaged over the batch
+beta_schedule: linear 0 -> 1 over 1 epochs
+selection: min val loss (beta=1) on val images without annotated damage, after warmup
+threshold: max val F1 (D40) per score; primary score = higher val PR-AUC (D40)
+score_scale: squared error per pixel in [0, 1] RGB space, averaged over channels;
+  global = image mean, patch = max of the patch-averaged error; higher = more anomalous
+image_source: RDD2022_128
+train_images: 256
+val_no_damage_images: 61
+best_epoch: 3
+limit: 256
+device: cuda
+torch: 2.14.1+cu126
+dataset_version: dataset_v1
+splits_sha256: c7b4690943e597a382ab0f7a8ad1298317f267901476b72111a1b1a8041a8614

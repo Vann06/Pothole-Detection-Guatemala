@@ -1,0 +1,37 @@
+latent: 128
+image_size: 512
+patch_size: 64
+batch_size: 8
+epochs: 3
+lr: 0.001
+patience: 8
+warmup_epochs: 1
+patch: 64
+std_floor_frac: 0.1
+num_workers: 2
+seed: 42
+amp: true
+use_cache: true
+latency_images: 200
+experiment_id: vae_patch512_limit256
+optimizer: Adam
+scheduler: null
+loss: per-image sum of squared error + beta * KL, averaged over the batch
+beta_schedule: linear 0 -> 1 over 1 epochs
+selection: min val loss (beta=1) on val images without annotated damage, after warmup
+threshold: max val F1 (D40) per score; primary score = highest val PR-AUC (D40)
+position_stats: per-position mean/std of the patch grid on train no-damage images,
+  std floored at 0.1 x median std
+score_scale: 'global and patch: squared error per pixel in [0, 1] RGB space, averaged
+  over channels (global = image mean, patch = max of the patch-averaged error); patch_norm:
+  unitless z-score, max over positions of (patch error - train no-damage mean) / floored
+  std; higher = more anomalous'
+image_source: RDD2022_512
+train_images: 256
+val_no_damage_images: 61
+best_epoch: 3
+limit: 256
+device: cuda
+torch: 2.14.1+cu126
+dataset_version: dataset_v1
+splits_sha256: c7b4690943e597a382ab0f7a8ad1298317f267901476b72111a1b1a8041a8614
