@@ -4,7 +4,7 @@ Esta rama `main` contiene el reporte del proyecto y sus figuras. El código expe
 
 ## Reporte
 
-- [Informe en PDF — 14 páginas](docs/Informe_Proyecto_Baches.pdf)
+- [Informe actualizado en PDF](docs/Informe_Proyecto_Baches.pdf)
 - [Informe editable en Word](docs/Informe_Proyecto_Baches.docx)
 - [Fuente del informe en Markdown](docs/INFORME_PROYECTO_BACHES.md)
 
@@ -21,8 +21,18 @@ Grad-CAM es una técnica de explicación, no un segundo clasificador. ResNet y V
 
 ## Qué está comprobado y qué falta
 
-La integración pasó 59 pruebas automatizadas. Las métricas reales disponibles corresponden a dos variantes VAE; las pruebas sintéticas de EfficientNet verifican software, no precisión sobre baches. Faltan el entrenamiento real de EfficientNet, los resultados del control ResNet disponibles para comparar, Guatemala, Grad-CAM sobre fotografías reales y latencia estandarizada.
+**EfficientNet-B0 ya está entrenada con datos reales.** Se verificaron por SHA256 las 38,385 imágenes y sus XML de `data/raw/RDD2022/`. El entrenamiento usó 19,476 imágenes, se detuvo en la época 6 y seleccionó la época 2 por AP de validación. El umbral 0.7523648738861084 se fijó en validación, sin ajustarlo en los tests.
 
-Los paquetes de `dataset_v1` están en el OneDrive institucional indicado por el equipo, pero su contenido no pudo verificarse sin autenticación UVG. No se incluyen imágenes del dataset, checkpoints ni enlaces de acceso restringido en esta entrega. Las instrucciones de ejecución están en las ramas de implementación.
+| Test | Precision | Recall | F1 | AP |
+|---|---:|---:|---:|---:|
+| Interno | 0.6179 | 0.6733 | 0.6444 | 0.7306 |
+| Noruega | 0.1020 | 0.0586 | 0.0744 | 0.0586 |
+| China_Drone | 0.1508 | 0.5938 | 0.2405 | 0.2940 |
 
-**Corte del informe: 30 de octubre de 2026, hora de Guatemala.** Se conserva el documento tal como fue revisado: las menciones a commits locales y al reporte aún no publicado describen su estado antes de esta entrega. Ahora el reporte se versiona en `main` y los dos commits de implementación se publican en sus respectivas ramas. Esto actualiza el estado de publicación, no los resultados experimentales ni los pendientes académicos.
+El modelo mejora F1/AP frente al VAE en test interno y dron, pero **omite 241 de 256 baches en Noruega**. No está validado para despliegue en Guatemala. No hay resultados verificables del control ResNet para afirmar que B0 lo supera.
+
+Se generaron e inspeccionaron 36 mapas Grad-CAM reales. La latencia mediana B0 fue 96.467 ms CPU y 8.748 ms MPS en Apple M4 Pro, con batch 1, cuatro hilos CPU y 200 mediciones tras 20 calentamientos. Son tiempos de forward más score, no de la aplicación completa ni una comparación con el hardware histórico del VAE.
+
+Las 59 pruebas automatizadas pasaron y las métricas se auditaron contra los CSV completos. Ya no se requiere acceso a OneDrive para esta copia local. Los datos crudos y checkpoints permanecen fuera de Git; los reportes completos de la corrida están en el checkout de `feature/efficientnet`.
+
+**Corte experimental del informe: 31 de octubre de 2026, hora de Guatemala.** Esta entrega publica los resultados reales en `feature/efficientnet` y el informe actualizado en `main`, sin fusionar el código experimental. Las menciones del documento a resultados preparados localmente o publicación pendiente describen su corte anterior a esta publicación; no indican que el entrenamiento esté pendiente. Quedan pendientes ResNet, Guatemala, comparación de latencias entre modelos, revisión colectiva, video, presentación y requisitos administrativos.
