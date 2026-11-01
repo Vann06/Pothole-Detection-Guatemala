@@ -1,5 +1,5 @@
 # Comparador de exp2_pretrained (ResNet18): mismos splits, transforms, presupuesto y selección.
-# Se conserva el VAE como resultado negativo; esta corrida NO tiene resultados todavía.
+# Se conserva el VAE como resultado negativo; resultados en reports/experiments/efficientnet/.
 experiment_id: efficientnet_b0_pretrained
 family: efficientnet
 pretrained: true

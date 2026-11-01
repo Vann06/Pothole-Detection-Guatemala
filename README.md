@@ -12,8 +12,9 @@ El proyecto utiliza **RDD2022** como dataset principal y compara enfoques de:
 - **XAI / Grad-CAM** para interpretar predicciones y errores.
 - Evaluación **in-distribution**, **out-of-distribution (OOD)** y posteriormente en un conjunto externo de Guatemala.
 
-EfficientNet está implementada e integrada con evaluación, latencia y Grad-CAM; su entrenamiento
-real está pendiente de disponer de las imágenes. Ver [protocolo y comandos](docs/EFFICIENTNET.md).
+EfficientNet ya fue entrenada con RDD2022 local verificado e integrada con evaluación, latencia y Grad-CAM reales.
+Alcanzó F1 0.6444 en test interno, 0.0744 en Noruega y 0.2405 en China_Drone; omite 241 de 256 baches
+noruegos y no está lista para despliegue. Ver [resultados, protocolo y comandos](docs/EFFICIENTNET.md).
 Los resultados negativos del VAE se conservan, no se sustituyen por métricas sintéticas.
 
 ---

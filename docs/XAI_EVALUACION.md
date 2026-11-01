@@ -1,24 +1,24 @@
 # XAI y evaluación cross-domain · Felipe Aguilar
 
-**Actualización: 31 de octubre de 2026. Estado: implementación local y análisis de los CSV VAE; evaluación final incompleta por insumos pendientes.**
+**Actualización: 31 de octubre de 2026. Estado: EfficientNet entrenada, comparación con VAE, 36 Grad-CAM reales y latencia B0 CPU/MPS; ResNet y Guatemala pendientes.**
 
-Este documento acompaña `notebooks/04_xai_evaluation.ipynb` y sirve como contribución al informe y guía de defensa. Se consultaron `Proyecto Final.pdf`, la copia local de `Proyecto Final - Baches.docx`, el protocolo de Guatemala y las ramas del repositorio. El enlace institucional de OneDrive exige iniciar sesión: **no se pudo verificar su contenido actual** ni se modificó el documento compartido.
+Este documento acompaña `notebooks/04_xai_evaluation.ipynb` y sirve como contribución al informe y guía de defensa. Se consultaron `Proyecto Final.pdf`, la copia local de `Proyecto Final - Baches.docx`, el protocolo de Guatemala y las ramas del repositorio. Las 38,385 imágenes y sus XML ya están en `data/raw/RDD2022/` y pasaron la verificación SHA256 de `dataset_v1`; no se necesita acceso a OneDrive para esta copia ni se modificó el documento compartido.
 
-EfficientNet-B0 se incorpora como segundo clasificador supervisado, sin eliminar el resultado VAE. Entrenamiento, inferencia, consolidación, latencia y Grad-CAM están integrados; faltan imágenes y resultados de entrenamiento real. El protocolo comparable con ResNet18 y los comandos están en [EFFICIENTNET.md](EFFICIENTNET.md).
+EfficientNet-B0 se incorpora como segundo clasificador supervisado, sin eliminar el resultado VAE. Entrenada durante seis épocas, seleccionó la época 2 por AP de validación; con umbral fijo 0.7523648738861084 obtuvo F1 0.6444 interno, 0.0744 Noruega y 0.2405 dron. En Noruega omitió 241 de 256 baches. El protocolo, las métricas y los comandos están en [EFFICIENTNET.md](EFFICIENTNET.md).
 
 ## 1. Qué está disponible y qué falta
 
 | Entregable | Estado comprobable |
 |---|---|
-| Comparación consolidada | Ejecutada sobre `vae_base` y `vae_patch512`; pendientes resultados ResNet y EfficientNet. |
+| Comparación consolidada | Ejecutada sobre `efficientnet_b0_pretrained`, `vae_base` y `vae_patch512`; faltan resultados ResNet. |
 | Matrices de confusión y curvas PR | Generadas para test interno, Noruega y China_Drone. |
 | Domain shift | ΔF1/Δrecall calculados sin cambiar el umbral. Guatemala pendiente. |
-| Análisis de errores | Conteos por país, otros daños y selección reproducible de casos. Interpretación de fotos pendiente. |
-| Grad-CAM | Implementado para ResNet18 y EfficientNet-B0, probado con entradas sintéticas/modelos de prueba. **No hay mapas de un modelo entrenado en los baches del proyecto.** |
-| Latencia | Benchmark batch 1 implementado; CPU/MPS/CUDA con sincronización. Medición de modelos entrenados pendiente. |
+| Análisis de errores | Conteos por país/daño y revisión visual de los 36 casos B0 seleccionados con seed 42. |
+| Grad-CAM | 36 mapas del checkpoint B0 entrenado; tres TP/TN/FP/FN por test. ResNet pendiente. |
+| Latencia | B0: mediana CPU 96.467 ms y MPS 8.748 ms; batch 1, cuatro hilos CPU, 200 mediciones y 20 calentamientos. Otros modelos pendientes bajo el mismo protocolo. |
 | Presentación/video | Guion y preguntas de defensa en este documento; no equivale a haber grabado o entregado el video. |
 
-La base local es `origin/feature/vae-variants` (incluye los componentes compartidos y ResNet). El módulo de evaluación se conserva en `feature/xai-evaluation`; `feature/efficientnet` parte de ese commit e integra el entrenamiento del nuevo clasificador. No se alteraron los manifests congelados ni los resultados originales. Los modelos entrenados y fotos no se encontraron en las ubicaciones revisadas; esto no demuestra que no existan en el equipo o en OneDrive.
+La base del trabajo es `origin/feature/vae-variants` (incluye los componentes compartidos y ResNet). El módulo de evaluación se conserva en `feature/xai-evaluation`; `feature/efficientnet` parte de ese commit e integra entrenamiento y resultados B0. No se alteraron los manifests congelados ni los resultados VAE originales. El checkpoint B0 está en `checkpoints/efficientnet/efficientnet_b0_pretrained/best.pt`, fuera de Git. La procedencia se registra en `run_provenance.json` junto a los resultados.
 
 ## 2. Protocolo experimental
 
@@ -75,7 +75,7 @@ Salidas en `reports/xai_evaluation/`:
 - `archive_discrepancies.csv`, `status.json`: discrepancias, hashes de los insumos y entregables pendientes.
 - `latency_reported.csv`: **latencias históricas**, no benchmark nuevo.
 
-Revisar cada foto y registrar en `visual_interpretation`: zona observada, región activada, concordancia con cajas D40 y limitación. Distinguir observación («la activación está en el borde superior») de hipótesis («podría usar contexto»). Los grupos `other_damage_classes` se solapan; no sumar sus conteos como imágenes únicas.
+Revisar cada foto y registrar zona observada, región activada, concordancia con cajas D40 y limitación. La revisión posterior B0 está en `reports/xai_evaluation/efficientnet_b0_pretrained/gradcam/visual_review.md`; los campos vacíos de las exportaciones automáticas no sustituyen esta revisión. Distinguir observación («la activación está en el borde superior») de hipótesis («podría usar contexto»). Los grupos `other_damage_classes` se solapan; no sumar sus conteos como imágenes únicas.
 
 ## 5. Grad-CAM de ResNet y EfficientNet
 
@@ -149,7 +149,7 @@ Repetir inferencia para cada experimento sin modificar sus umbrales. La consolid
 
 **Resultado (40 segundos):** «En Noruega los VAE encontraron todos los positivos, pero también marcaron todas las imágenes negativas. Son 256 TP y 7905 FP: recall 100 %, pero precisión 3.14 % y F1 0.061. La matriz demuestra por qué no basta con presentar recall. El desempeño interno ya era deficiente».
 
-**Explicabilidad (30 segundos):** «Grad-CAM usa gradientes del logit D40 para identificar regiones relacionadas con esa salida. Está implementado y validado con pruebas controladas, pero no voy a presentar mapas reales hasta recibir los pesos y las fotos. Incluso entonces, un mapa atractivo no demuestra causalidad».
+**Explicabilidad (30 segundos):** «Ya inspeccionamos 36 mapas del EfficientNet entrenado. En Norway_007551 el modelo omite el bache y activa el horizonte, fuera de las cajas. En China_Drone_001847 hay activación en la caja, pero el score no supera el umbral. Un mapa atractivo no garantiza acierto ni demuestra causalidad».
 
 **Cierre (20 segundos):** «No podemos recomendar despliegue en Guatemala todavía. Falta completar ResNet, las capturas etiquetadas de Guatemala y la latencia de todos los modelos en el mismo equipo. La contribución permite ejecutar esas etapas de manera reproducible y deja explícito lo que no está medido».
 
@@ -162,7 +162,7 @@ Repetir inferencia para cada experimento sin modificar sus umbrales. La consolid
 5. VAE y variantes: normalidad, score y selección.
 6. **Felipe:** tabla consolidada y matrices, no solo recall.
 7. **Felipe:** domain shift, prevalencias y situación de Guatemala.
-8. **Felipe:** Grad-CAM y TP/FP/FN reales cuando existan; mientras tanto, marcar pendiente.
+8. **Felipe:** Grad-CAM B0 y TP/FP/FN reales; relacionarlos con el fuerte deterioro de Noruega.
 9. **Felipe/equipo:** latencia comparable y limitaciones.
 10. Conclusiones, pendientes, repositorio/video y atribución de apoyo IA.
 
@@ -177,8 +177,8 @@ En el video mostrar notebook ejecutado, matrices y comando reproducible. Si no s
 - **¿ΔF1 mide solo cambio de país?** No. Mezcla cambios de apariencia, frecuencia de clases y composición de muestras. China_Drone añade cambio de perspectiva; no debe confundirse con Noruega ni Guatemala.
 - **¿Grad-CAM demuestra que el modelo entiende un bache?** No. Localiza evidencia asociada a una salida bajo una aproximación por gradientes; no es prueba causal ni segmentación.
 - **¿Cómo explicas un falso negativo?** Se calcula igualmente el mapa del logit D40; explicar la clase negativa respondería otra pregunta. Un mapa vacío se registra, no se rellena.
-- **¿Cuál modelo gana?** Todavía no existe la comparación completa ResNet–VAE. No escoger por el mejor F1 externo tras observar los tests; seleccionar variantes en validación y reportar todos los resultados.
-- **¿Qué falta para cerrar tu parte?** Pesos/reportes ResNet, pesos VAE, imágenes RDD2022 y conjunto Guatemala revisado; ejecutar Grad-CAM, inspeccionar casos y medir latencia comparable. Después integrar los resultados al informe/video del equipo.
+- **¿Cuál modelo gana?** B0 mejora F1/AP frente al VAE en test interno y dron, pero falla en recall de Noruega. No hay resultados ResNet para compararla. No escoger ni ajustar variantes por su mejor resultado externo tras observar los tests.
+- **¿Qué falta para cerrar tu parte?** Reportes/checkpoint ResNet, checkpoints VAE para repetir latencia comparable y Guatemala revisada. RDD2022, entrenamiento B0, sus Grad-CAM y latencia CPU/MPS ya están completos; falta la integración y revisión colectiva del video/presentación.
 
 ## 8. Trazabilidad del apoyo IA
 

@@ -1,0 +1,39 @@
+{
+  "command": "python3 -u -m src.models.train_resnet --config configs/efficientnet/exp1_pretrained.yaml --device mps",
+  "source_commit": "631e794dcb0298ed0c57136679160b32fc2862e1",
+  "dataset_root": "data/raw/RDD2022",
+  "dataset_verification": {
+    "command": "python3 src/data/share_dataset.py --verify",
+    "exit_code": 0,
+    "images_verified": 38385,
+    "xml_verified": 38385,
+    "method": "Every JPG/XML SHA256 equals dataset_v1 file_checksums.csv"
+  },
+  "manifest_sha256": {
+    "images.csv": "4d66b3c6f75e0e88b71b41049bca58249a23bc6213b7034503fa42d1fa3042f8",
+    "annotations.csv": "c1631666eab650d1525ab164310e2c99190da5e3458b9975c0c7911667705d77",
+    "splits.csv": "c7b4690943e597a382ab0f7a8ad1298317f267901476b72111a1b1a8041a8614",
+    "file_checksums.csv": "1da12807d540f2c1d4a111c0ec8c2792b50b58052a79177147151778b7ec8753",
+    "dataset_v1.lock.json": "7882362e13ba607d31156e8dd486192aa38684eb3cf4e982ada430732a1bcce6"
+  },
+  "checkpoint_sha256": "4491ad1bd4868bf9dc0eb01cdb41906c4b988cca9add4394dcb07e82c49b8d06",
+  "output_sha256": {
+    "config.yaml": "8eba2b7de7148ded5734da5a29b480e1281586d6e307513fd591cb3446070884",
+    "history.csv": "958cc65ed8f62461f836cb75cb8fe6d3810ad3773499a785616679bf6112f74f",
+    "metrics.json": "f0f40a2964a308dd38cb2fbf62ceae01312ce264a0b488f42eb5b97544cca18d",
+    "predictions.csv": "850e3e0c77c072b7d7b1ba52b124d1301aee20d4a23fe0d60ca4e9926228206d"
+  },
+  "hardware": "Apple M4 Pro",
+  "memory_bytes": 25769803776,
+  "platform": "macOS-27.2-arm64-arm-64bit",
+  "python": "3.11.2",
+  "device": "mps",
+  "effective_amp": false,
+  "log_created_local": "2026-10-31T18:11:29.510750-06:00",
+  "log_last_written_local": "2026-10-31T18:28:24.011246-06:00",
+  "completed_epochs": 6,
+  "selected_epoch": 2,
+  "epoch_train_and_val_seconds": 863.5346496105194,
+  "stop_reason": "No validation AP improvement for 4 epochs",
+  "test_used_for_selection": false
+}

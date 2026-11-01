@@ -2,12 +2,31 @@
 
 ## Hipótesis y estado
 
-**Implementado; pendiente entrenar y evaluar con RDD2022. No hay resultados reales de EfficientNet todavía.**
+**Entrenado y evaluado con RDD2022 local verificado el 31 de octubre de 2026.**
 El objetivo es comparar EfficientNet-B0 preentrenada con ResNet18 preentrenada para presencia de D40 a nivel de imagen, manteniendo los mismos datos y protocolo. No se promete que gane. El VAE se conserva como hallazgo negativo: su error de reconstrucción no discriminó D40 en las variantes evaluadas.
 
 EfficientNet-B0 combina convoluciones separables en profundidad, bloques MBConv y atención de canales squeeze-and-excitation. B0 es el modelo base de una familia diseñada para escalar profundidad, ancho y resolución conjuntamente. Se reutilizan pesos **ImageNet IMAGENET1K_V1**, se cambia la última capa por un logit D40 y se ajustan todos los parámetros. Se conserva el dropout y stochastic depth propios de B0. El score es sigmoid(logit); el mapa Grad-CAM no es una caja predicha.
 
 Pregunta para el catedrático: **¿qué compromiso entre discriminación D40, generalización externa y costo de inferencia ofrecen dos arquitecturas supervisadas bajo un protocolo compartido?** No comparar únicamente accuracy ni elegir el ganador a partir del test externo.
+
+## Resultados reales de la primera corrida
+
+Las 38,385 imágenes y sus XML pasaron la verificación SHA256 de `dataset_v1` en `data/raw/RDD2022/`, sin regenerar splits. Se entrenó con las 19,476 imágenes de train en Apple M4 Pro/MPS, sin `--limit` ni cambios de hiperparámetros. Parada temprana en la época 6; checkpoint de la época 2 por máxima AP de val. Umbral fijo de validación: **0.7523648738861084**.
+
+| Partición | Precision | Recall | F1 | AP |
+|---|---:|---:|---:|---:|
+| Validación | 0.6895 | 0.7401 | 0.7139 | 0.7678 |
+| Test interno | 0.6179 | 0.6733 | 0.6444 | 0.7306 |
+| Noruega | 0.1020 | 0.0586 | 0.0744 | 0.0586 |
+| China_Drone | 0.1508 | 0.5938 | 0.2405 | 0.2940 |
+
+**No resuelve la generalización:** en Noruega detecta 15 de 256 baches y omite 241, aunque reduce las falsas alarmas frente al VAE. Mejora F1/AP en test interno y dron frente a las variantes VAE disponibles; no demuestra superioridad frente a ResNet, cuyos resultados aún faltan. No se cambió el umbral tras observar esta falla.
+
+Se generaron e inspeccionaron 36 mapas reales. La [revisión visual](../reports/xai_evaluation/efficientnet_b0_pretrained/gradcam/visual_review.md) incluye TP, TN, FP y FN de los tres tests, con activación fuera de las cajas en varios casos. El [checkpoint seleccionado](../reports/experiments/efficientnet/efficientnet_b0_pretrained/run_provenance.json) queda identificado por SHA256; los pesos permanecen fuera de Git.
+
+Latencia B0 en el mismo Apple M4 Pro: mediana **96.467 ms CPU / 8.748 ms MPS**, batch 1, cuatro hilos CPU, 200 mediciones y 20 calentamientos. Incluye forward float32 + score, no I/O, preprocesamiento ni transferencia. Los JSON de `benchmark_cpu` y `benchmark_mps` conservan muestras e IDs; no comparar estos valores con las latencias históricas VAE medidas con otro protocolo/hardware.
+
+Fuentes: [métricas completas](../reports/experiments/efficientnet/efficientnet_b0_pretrained/metrics.json), [historial](../reports/experiments/efficientnet/efficientnet_b0_pretrained/history.csv), [consolidación](../reports/xai_evaluation/metrics.csv) y [cambio entre dominios](../reports/xai_evaluation/domain_shift.csv). Las 59 pruebas pasaron; se auditaron los 18,909 scores exportados y se verificó la recarga en CPU/MPS. El informe actualizado está en el worktree de main; estos artefactos se mantienen en la rama experimental.
 
 ## Comparación controlada
 

@@ -1,4 +1,5 @@
 experiment_id,device,reported_median_ms,image_size,scope,comparability
+efficientnet_b0_pretrained,cpu,230.3394374976051,224,"forward pass only, preprocessed input",unverified: hardware/warmup/sample count not recorded
 vae_base,cpu,9.320800003479235,128,"forward pass only (z = mu), preprocessed input; scoring not included",unverified: hardware/warmup/sample count not recorded
 vae_base,cuda,2.2835500130895525,128,"forward pass only (z = mu), preprocessed input; scoring not included",unverified: hardware/warmup/sample count not recorded
 vae_patch512,cpu,95.57049999420997,512,"forward pass only (z = mu), preprocessed input; scoring not included",unverified: hardware/warmup/sample count not recorded

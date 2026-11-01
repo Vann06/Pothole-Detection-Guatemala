@@ -1,0 +1,11 @@
+{
+  "experiment_id": "efficientnet_b0_pretrained",
+  "family": "efficientnet",
+  "target_layer": "features.8",
+  "checkpoint_sha256": "4491ad1bd4868bf9dc0eb01cdb41906c4b988cca9add4394dcb07e82c49b8d06",
+  "seed": 42,
+  "target": "D40 logit (output 0), including FN",
+  "selection": "uniform per split/outcome",
+  "unavailable_groups": "see case_coverage.csv; never duplicated or manufactured",
+  "external_manifest_sha256": null
+}

@@ -3,6 +3,13 @@
   "splits_sha256": "c7b4690943e597a382ab0f7a8ad1298317f267901476b72111a1b1a8041a8614",
   "sources": [
     {
+      "family": "efficientnet",
+      "experiment_id": "efficientnet_b0_pretrained",
+      "predictions_sha256": "850e3e0c77c072b7d7b1ba52b124d1301aee20d4a23fe0d60ca4e9926228206d",
+      "config_sha256": "8eba2b7de7148ded5734da5a29b480e1281586d6e307513fd591cb3446070884",
+      "external_predictions_sha256": null
+    },
+    {
       "family": "vae",
       "experiment_id": "vae_base",
       "predictions_sha256": "6b34e92e6a30ed8958bac348e0617f7b0337397348c8d6d209e778bfbc76c54a",
@@ -19,13 +26,17 @@
   ],
   "selection": "Classifiers: maximum validation AP; lexical ID tie-break",
   "selected_resnet": null,
-  "selected_classifier": null,
+  "selected_classifier": {
+    "family": "efficientnet",
+    "experiment_id": "efficientnet_b0_pretrained"
+  },
   "guatemala_evaluated": [],
   "guatemala_pending": [
+    "efficientnet_b0_pretrained",
     "vae_base",
     "vae_patch512"
   ],
   "external_manifest_sha256": null,
-  "gradcam": "pending checkpoint and original images",
+  "gradcam": "run src.xai.gradcam with selected checkpoint",
   "latency": "historical medians only; rerun benchmark on the same machine for comparison"
 }
