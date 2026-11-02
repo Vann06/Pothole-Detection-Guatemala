@@ -17,6 +17,15 @@ Alcanzó F1 0.6444 en test interno, 0.0744 en Noruega y 0.2405 en China_Drone; o
 noruegos y no está lista para despliegue. Ver [resultados, protocolo y comandos](docs/EFFICIENTNET.md).
 Los resultados negativos del VAE se conservan, no se sustituyen por métricas sintéticas.
 
+## Informe del proyecto
+
+- [Informe actualizado en PDF](docs/Informe_Proyecto_Baches.pdf)
+- [Informe editable en Word](docs/Informe_Proyecto_Baches.docx)
+- [Fuente del informe en Markdown](docs/INFORME_PROYECTO_BACHES.md)
+
+El informe reúne el problema, análisis, propuesta, solución, herramientas, uso crítico de IA,
+resultados, conclusiones y bibliografía, junto con la evidencia real de EfficientNet y XAI.
+
 ---
 
 ## 1. Pregunta principal
