@@ -1,0 +1,67 @@
+# =========================
+# Dataset local
+# =========================
+data/raw/
+*.zip
+*.rar
+*.7z
+
+# =========================
+# Python environments
+# =========================
+.venv/
+venv/
+env/
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+
+# =========================
+# Jupyter
+# =========================
+.ipynb_checkpoints/
+
+# =========================
+# VS Code
+# =========================
+.vscode/
+
+# =========================
+# Operating system
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Models / checkpoints
+# =========================
+*.pt
+*.pth
+*.ckpt
+
+checkpoints/
+weights/
+
+# =========================
+# Experiment outputs
+# =========================
+runs/
+wandb/
+logs/
+
+# =========================
+# Local configuration
+# =========================
+configs/paths.local.yaml
+
+# Local distribution and external evaluation photos
+.dist/
+data/recovery/
+data/external/
+
+# Smoke-test runs (--limit / _limitN): never results, notebooks skip them
+reports/experiments/*/*_limit*/
+reports/xai_evaluation/*_limit*/

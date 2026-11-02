@@ -1,0 +1,42 @@
+{
+  "version": "dataset_v1",
+  "packages": {
+    "RDD2022_China_Drone_dataset_v1.zip": {
+      "files": 4802,
+      "sha256": "bcaed0fd08ae1e9b6a32a3a657eb749b0fc8ee304dce63f853055055775546ef",
+      "bytes": 170527707
+    },
+    "RDD2022_China_MotorBike_dataset_v1.zip": {
+      "files": 3954,
+      "sha256": "2acea923b69128dfd667e5346ebfca3027fa1ab21c1096041e103dc06c71e9f9",
+      "bytes": 155360162
+    },
+    "RDD2022_Czech_dataset_v1.zip": {
+      "files": 5658,
+      "sha256": "8090bb27ad1ab5babff79d453b6b7293f3302d1f71ed342441648de9452b695b",
+      "bytes": 206795165
+    },
+    "RDD2022_India_dataset_v1.zip": {
+      "files": 15412,
+      "sha256": "47515fb20f8c9ed51f8785aedea7b69cb5117b7589ed07fbaad9d524da0f5a41",
+      "bytes": 525531078
+    },
+    "RDD2022_Japan_dataset_v1.zip": {
+      "files": 21012,
+      "sha256": "9a3ef348a20f8be0da7d89aa92dba9c602e72922a61eb59875350a6eabf5db1a",
+      "bytes": 863072657
+    },
+    "RDD2022_Norway_dataset_v1.zip": {
+      "files": 16322,
+      "sha256": "182a92623aade122e6c5f542036da6c3ed0dbe68241bcd2812a30ff76fd3003f",
+      "bytes": 8823478786
+    },
+    "RDD2022_United_States_dataset_v1.zip": {
+      "files": 9610,
+      "sha256": "773cd0f37f94f094923f2523302399ddcbd71e085e2ac01987b68d8a1eb07cf9",
+      "bytes": 363655324
+    }
+  },
+  "total_bytes": 11108420879,
+  "total_files": 76770
+}

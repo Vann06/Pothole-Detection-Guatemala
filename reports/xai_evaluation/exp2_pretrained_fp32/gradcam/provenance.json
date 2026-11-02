@@ -1,0 +1,11 @@
+{
+  "experiment_id": "exp2_pretrained_fp32",
+  "family": "resnet",
+  "target_layer": "layer4",
+  "checkpoint_sha256": "15909aa6568814d2d95735468eefaf9465440bd350ad7ec14113914d2251ae35",
+  "seed": 42,
+  "target": "D40 logit (output 0), including FN",
+  "selection": "uniform per split/outcome",
+  "unavailable_groups": "see case_coverage.csv; never duplicated or manufactured",
+  "external_manifest_sha256": null
+}

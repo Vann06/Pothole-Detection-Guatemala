@@ -1,0 +1,6 @@
+experiment_id,split,metric,archived,recomputed
+vae_base,val,tp,503.0,502.0
+vae_base,val,fn,1.0,2.0
+vae_base,val,f1,0.21737251512532413,0.21698724875729414
+vae_base,val,precision,0.12196896217264791,0.12175600291050206
+vae_base,val,recall,0.998015873015873,0.996031746031746

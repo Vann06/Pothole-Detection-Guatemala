@@ -1,0 +1,13 @@
+# Experimento 1: ResNet18 desde cero
+experiment_id: exp1_scratch
+pretrained: false
+augment: false
+image_size: 224
+batch_size: 32
+epochs: 30
+lr: 0.001
+weight_decay: 0.0001
+patience: 6
+num_workers: 4
+seed: 42
+amp: true

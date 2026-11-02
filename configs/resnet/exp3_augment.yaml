@@ -1,0 +1,15 @@
+# Experimento 3: mejor configuración de exp1/exp2 (por PR-AUC en val, nunca test) + augmentation.
+# Por defecto asume que gana exp2; si gana exp1 copiar pretrained/lr/epochs/patience de exp1_scratch.yaml.
+experiment_id: exp3_augment
+based_on: exp2_pretrained
+pretrained: true
+augment: true
+image_size: 224
+batch_size: 32
+epochs: 20
+lr: 0.0001
+weight_decay: 0.0001
+patience: 5
+num_workers: 4
+seed: 42
+amp: true

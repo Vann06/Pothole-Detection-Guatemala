@@ -1,0 +1,672 @@
+{
+  "test_id": {
+    "groups": {
+      "no_damage": {
+        "n": 971,
+        "mean": 0.03575676011730175,
+        "median": 0.032455467,
+        "p90": 0.063253045,
+        "flagged_rate": 1.0
+      },
+      "other": {
+        "n": 2701,
+        "mean": 0.04710658721477231,
+        "median": 0.044082716,
+        "p90": 0.077888235,
+        "flagged_rate": 0.9825990373935579
+      },
+      "pothole": {
+        "n": 502,
+        "mean": 0.040377132954581674,
+        "median": 0.0367140635,
+        "p90": 0.07254452400000001,
+        "flagged_rate": 1.0
+      }
+    },
+    "pairwise_auroc": {
+      "no_damage_vs_other": {
+        "n_low": 971,
+        "n_high": 2701,
+        "auroc": 0.6551797766475475
+      },
+      "no_damage_vs_pothole": {
+        "n_low": 971,
+        "n_high": 502,
+        "auroc": 0.5561174457679068
+      },
+      "other_vs_pothole": {
+        "n_low": 2701,
+        "n_high": 502,
+        "auroc": 0.40786059759481147
+      }
+    },
+    "by_country": {
+      "China_MotorBike": {
+        "n": {
+          "no_damage": 0,
+          "other": 272,
+          "pothole": 24
+        },
+        "pr_auc_D40": 0.2155730251805579,
+        "pairwise_auroc": {
+          "no_damage_vs_other": {
+            "n_low": 0,
+            "n_high": 272,
+            "auroc": null
+          },
+          "no_damage_vs_pothole": {
+            "n_low": 0,
+            "n_high": 24,
+            "auroc": null
+          },
+          "other_vs_pothole": {
+            "n_low": 272,
+            "n_high": 24,
+            "auroc": 0.7432598039215687
+          }
+        }
+      },
+      "Czech": {
+        "n": {
+          "no_damage": 264,
+          "other": 137,
+          "pothole": 23
+        },
+        "pr_auc_D40": 0.07133325589848673,
+        "pairwise_auroc": {
+          "no_damage_vs_other": {
+            "n_low": 264,
+            "n_high": 137,
+            "auroc": 0.5177504976775049
+          },
+          "no_damage_vs_pothole": {
+            "n_low": 264,
+            "n_high": 23,
+            "auroc": 0.5846508563899868
+          },
+          "other_vs_pothole": {
+            "n_low": 137,
+            "n_high": 23,
+            "auroc": 0.5588701999365281
+          }
+        }
+      },
+      "India": {
+        "n": {
+          "no_damage": 588,
+          "other": 339,
+          "pothole": 230
+        },
+        "pr_auc_D40": 0.18327040436934963,
+        "pairwise_auroc": {
+          "no_damage_vs_other": {
+            "n_low": 588,
+            "n_high": 339,
+            "auroc": 0.5165001103686312
+          },
+          "no_damage_vs_pothole": {
+            "n_low": 588,
+            "n_high": 230,
+            "auroc": 0.4590875480627034
+          },
+          "other_vs_pothole": {
+            "n_low": 339,
+            "n_high": 230,
+            "auroc": 0.43961780171860976
+          }
+        }
+      },
+      "Japan": {
+        "n": {
+          "no_damage": 119,
+          "other": 1249,
+          "pothole": 208
+        },
+        "pr_auc_D40": 0.11301472771707399,
+        "pairwise_auroc": {
+          "no_damage_vs_other": {
+            "n_low": 119,
+            "n_high": 1249,
+            "auroc": 0.500588706259125
+          },
+          "no_damage_vs_pothole": {
+            "n_low": 119,
+            "n_high": 208,
+            "auroc": 0.4157643826761474
+          },
+          "other_vs_pothole": {
+            "n_low": 1249,
+            "n_high": 208,
+            "auroc": 0.4177880766151383
+          }
+        }
+      },
+      "United_States": {
+        "n": {
+          "no_damage": 0,
+          "other": 704,
+          "pothole": 17
+        },
+        "pr_auc_D40": 0.0369592163870162,
+        "pairwise_auroc": {
+          "no_damage_vs_other": {
+            "n_low": 0,
+            "n_high": 704,
+            "auroc": null
+          },
+          "no_damage_vs_pothole": {
+            "n_low": 0,
+            "n_high": 17,
+            "auroc": null
+          },
+          "other_vs_pothole": {
+            "n_low": 704,
+            "n_high": 17,
+            "auroc": 0.5634191176470588
+          }
+        }
+      }
+    },
+    "other_damage_classes": {
+      "D00": {
+        "n": 1359,
+        "mean": 0.04246751450515084,
+        "median": 0.039665177,
+        "p90": 0.06871238400000002,
+        "flagged_rate": 0.9705665930831494
+      },
+      "D01": {
+        "n": 16,
+        "mean": 0.0334908258125,
+        "median": 0.030584515,
+        "p90": 0.045313229,
+        "flagged_rate": 1.0
+      },
+      "D10": {
+        "n": 798,
+        "mean": 0.046874141174185466,
+        "median": 0.043587942000000005,
+        "p90": 0.075429468,
+        "flagged_rate": 0.981203007518797
+      },
+      "D11": {
+        "n": 4,
+        "mean": 0.027361047,
+        "median": 0.0279830285,
+        "p90": 0.031209945,
+        "flagged_rate": 1.0
+      },
+      "D20": {
+        "n": 953,
+        "mean": 0.04834130725540398,
+        "median": 0.046846945,
+        "p90": 0.077736145,
+        "flagged_rate": 0.9947534102833159
+      },
+      "D43": {
+        "n": 113,
+        "mean": 0.0663939167079646,
+        "median": 0.063281834,
+        "p90": 0.10173417800000001,
+        "flagged_rate": 1.0
+      },
+      "D44": {
+        "n": 576,
+        "mean": 0.05456918708454861,
+        "median": 0.053024565999999995,
+        "p90": 0.086281422,
+        "flagged_rate": 1.0
+      },
+      "D50": {
+        "n": 334,
+        "mean": 0.06500465932934132,
+        "median": 0.0608909765,
+        "p90": 0.0927796118,
+        "flagged_rate": 1.0
+      },
+      "Repair": {
+        "n": 18,
+        "mean": 0.02604479713888889,
+        "median": 0.02628705,
+        "p90": 0.0352486895,
+        "flagged_rate": 1.0
+      }
+    },
+    "note": "images with several damage classes are counted once in each of their classes"
+  },
+  "test_ood": {
+    "groups": {
+      "no_damage": {
+        "n": 5247,
+        "mean": 0.04229447875414522,
+        "median": 0.039280172,
+        "p90": 0.064646088,
+        "flagged_rate": 1.0
+      },
+      "other": {
+        "n": 2658,
+        "mean": 0.04901718951091046,
+        "median": 0.047346419,
+        "p90": 0.07029622850000002,
+        "flagged_rate": 1.0
+      },
+      "pothole": {
+        "n": 256,
+        "mean": 0.046625308414062504,
+        "median": 0.0442109175,
+        "p90": 0.0664432525,
+        "flagged_rate": 1.0
+      }
+    },
+    "pairwise_auroc": {
+      "no_damage_vs_other": {
+        "n_low": 5247,
+        "n_high": 2658,
+        "auroc": 0.626924870035735
+      },
+      "no_damage_vs_pothole": {
+        "n_low": 5247,
+        "n_high": 256,
+        "auroc": 0.5861258516771488
+      },
+      "other_vs_pothole": {
+        "n_low": 2658,
+        "n_high": 256,
+        "auroc": 0.4559745932091798
+      }
+    },
+    "by_country": {
+      "Norway": {
+        "n": {
+          "no_damage": 5247,
+          "other": 2658,
+          "pothole": 256
+        },
+        "pr_auc_D40": 0.03487998228493772,
+        "pairwise_auroc": {
+          "no_damage_vs_other": {
+            "n_low": 5247,
+            "n_high": 2658,
+            "auroc": 0.626924870035735
+          },
+          "no_damage_vs_pothole": {
+            "n_low": 5247,
+            "n_high": 256,
+            "auroc": 0.5861258516771488
+          },
+          "other_vs_pothole": {
+            "n_low": 2658,
+            "n_high": 256,
+            "auroc": 0.4559745932091798
+          }
+        }
+      }
+    },
+    "other_damage_classes": {
+      "D00": {
+        "n": 2365,
+        "mean": 0.04856862460465117,
+        "median": 0.047066268,
+        "p90": 0.069472375,
+        "flagged_rate": 1.0
+      },
+      "D10": {
+        "n": 926,
+        "mean": 0.05129136891468682,
+        "median": 0.049409322000000006,
+        "p90": 0.07050378500000001,
+        "flagged_rate": 1.0
+      },
+      "D20": {
+        "n": 268,
+        "mean": 0.049781827895522386,
+        "median": 0.049062470999999996,
+        "p90": 0.0683141168,
+        "flagged_rate": 1.0
+      }
+    },
+    "note": "images with several damage classes are counted once in each of their classes"
+  },
+  "test_perspective": {
+    "groups": {
+      "no_damage": {
+        "n": 5,
+        "mean": 0.0321402466,
+        "median": 0.035284363,
+        "p90": 0.0433405902,
+        "flagged_rate": 1.0
+      },
+      "other": {
+        "n": 2332,
+        "mean": 0.019393971993739278,
+        "median": 0.014213169500000001,
+        "p90": 0.03880428630000002,
+        "flagged_rate": 0.9305317324185248
+      },
+      "pothole": {
+        "n": 64,
+        "mean": 0.0171818790453125,
+        "median": 0.0105716135,
+        "p90": 0.036523881200000025,
+        "flagged_rate": 0.96875
+      }
+    },
+    "pairwise_auroc": {
+      "no_damage_vs_other": {
+        "n_low": 5,
+        "n_high": 2332,
+        "auroc": 0.239451114922813
+      },
+      "no_damage_vs_pothole": {
+        "n_low": 5,
+        "n_high": 64,
+        "auroc": 0.22499999999999998
+      },
+      "other_vs_pothole": {
+        "n_low": 2332,
+        "n_high": 64,
+        "auroc": 0.41547625428816465
+      }
+    },
+    "by_country": {
+      "China_Drone": {
+        "n": {
+          "no_damage": 5,
+          "other": 2332,
+          "pothole": 64
+        },
+        "pr_auc_D40": 0.024889534366190357,
+        "pairwise_auroc": {
+          "no_damage_vs_other": {
+            "n_low": 5,
+            "n_high": 2332,
+            "auroc": 0.239451114922813
+          },
+          "no_damage_vs_pothole": {
+            "n_low": 5,
+            "n_high": 64,
+            "auroc": 0.22499999999999998
+          },
+          "other_vs_pothole": {
+            "n_low": 2332,
+            "n_high": 64,
+            "auroc": 0.41547625428816465
+          }
+        }
+      }
+    },
+    "other_damage_classes": {
+      "Block crack": {
+        "n": 3,
+        "mean": 0.016235278000000002,
+        "median": 0.012297153,
+        "p90": 0.021855913,
+        "flagged_rate": 1.0
+      },
+      "D00": {
+        "n": 1022,
+        "mean": 0.01869929875714286,
+        "median": 0.01384119875,
+        "p90": 0.035566588999999996,
+        "flagged_rate": 0.913894324853229
+      },
+      "D10": {
+        "n": 1012,
+        "mean": 0.020495695446837946,
+        "median": 0.014812806000000001,
+        "p90": 0.0388042863,
+        "flagged_rate": 0.9565217391304348
+      },
+      "D20": {
+        "n": 257,
+        "mean": 0.019240455294163426,
+        "median": 0.013086687,
+        "p90": 0.04564639500000001,
+        "flagged_rate": 0.9182879377431906
+      },
+      "Repair": {
+        "n": 573,
+        "mean": 0.019253120160732985,
+        "median": 0.013889432,
+        "p90": 0.04220629880000007,
+        "flagged_rate": 0.912739965095986
+      }
+    },
+    "note": "images with several damage classes are counted once in each of their classes"
+  },
+  "val": {
+    "groups": {
+      "no_damage": {
+        "n": 970,
+        "mean": 0.03804373508371134,
+        "median": 0.033122842,
+        "p90": 0.06665843860000001,
+        "flagged_rate": 0.9979381443298969
+      },
+      "other": {
+        "n": 2699,
+        "mean": 0.04729585960515006,
+        "median": 0.044593625,
+        "p90": 0.07794492200000004,
+        "flagged_rate": 0.9829566506113375
+      },
+      "pothole": {
+        "n": 504,
+        "mean": 0.03868696651170635,
+        "median": 0.034137981,
+        "p90": 0.0689910352,
+        "flagged_rate": 0.996031746031746
+      }
+    },
+    "pairwise_auroc": {
+      "no_damage_vs_other": {
+        "n_low": 970,
+        "n_high": 2699,
+        "auroc": 0.6339744005989236
+      },
+      "no_damage_vs_pothole": {
+        "n_low": 970,
+        "n_high": 504,
+        "auroc": 0.5063512518409425
+      },
+      "other_vs_pothole": {
+        "n_low": 2699,
+        "n_high": 504,
+        "auroc": 0.38555652593259115
+      }
+    },
+    "by_country": {
+      "China_MotorBike": {
+        "n": {
+          "no_damage": 0,
+          "other": 272,
+          "pothole": 25
+        },
+        "pr_auc_D40": 0.13095900118881734,
+        "pairwise_auroc": {
+          "no_damage_vs_other": {
+            "n_low": 0,
+            "n_high": 272,
+            "auroc": null
+          },
+          "no_damage_vs_pothole": {
+            "n_low": 0,
+            "n_high": 25,
+            "auroc": null
+          },
+          "other_vs_pothole": {
+            "n_low": 272,
+            "n_high": 25,
+            "auroc": 0.6083823529411765
+          }
+        }
+      },
+      "Czech": {
+        "n": {
+          "no_damage": 263,
+          "other": 138,
+          "pothole": 23
+        },
+        "pr_auc_D40": 0.10254430800402273,
+        "pairwise_auroc": {
+          "no_damage_vs_other": {
+            "n_low": 263,
+            "n_high": 138,
+            "auroc": 0.49556400506970844
+          },
+          "no_damage_vs_pothole": {
+            "n_low": 263,
+            "n_high": 23,
+            "auroc": 0.6639113903124484
+          },
+          "other_vs_pothole": {
+            "n_low": 138,
+            "n_high": 23,
+            "auroc": 0.6682419659735349
+          }
+        }
+      },
+      "India": {
+        "n": {
+          "no_damage": 588,
+          "other": 338,
+          "pothole": 229
+        },
+        "pr_auc_D40": 0.1640983811189708,
+        "pairwise_auroc": {
+          "no_damage_vs_other": {
+            "n_low": 588,
+            "n_high": 338,
+            "auroc": 0.44714809000523287
+          },
+          "no_damage_vs_pothole": {
+            "n_low": 588,
+            "n_high": 229,
+            "auroc": 0.388104149956926
+          },
+          "other_vs_pothole": {
+            "n_low": 338,
+            "n_high": 229,
+            "auroc": 0.43042815431125814
+          }
+        }
+      },
+      "Japan": {
+        "n": {
+          "no_damage": 119,
+          "other": 1248,
+          "pothole": 209
+        },
+        "pr_auc_D40": 0.10551293124679685,
+        "pairwise_auroc": {
+          "no_damage_vs_other": {
+            "n_low": 119,
+            "n_high": 1248,
+            "auroc": 0.45911441499676797
+          },
+          "no_damage_vs_pothole": {
+            "n_low": 119,
+            "n_high": 209,
+            "auroc": 0.35997748381649314
+          },
+          "other_vs_pothole": {
+            "n_low": 1248,
+            "n_high": 209,
+            "auroc": 0.3955994663231506
+          }
+        }
+      },
+      "United_States": {
+        "n": {
+          "no_damage": 0,
+          "other": 703,
+          "pothole": 18
+        },
+        "pr_auc_D40": 0.022316750119956257,
+        "pairwise_auroc": {
+          "no_damage_vs_other": {
+            "n_low": 0,
+            "n_high": 703,
+            "auroc": null
+          },
+          "no_damage_vs_pothole": {
+            "n_low": 0,
+            "n_high": 18,
+            "auroc": null
+          },
+          "other_vs_pothole": {
+            "n_low": 703,
+            "n_high": 18,
+            "auroc": 0.3982930298719773
+          }
+        }
+      }
+    },
+    "other_damage_classes": {
+      "D00": {
+        "n": 1433,
+        "mean": 0.04345769073914864,
+        "median": 0.040850125,
+        "p90": 0.07190086999999999,
+        "flagged_rate": 0.9713886950453594
+      },
+      "D01": {
+        "n": 12,
+        "mean": 0.03576778525,
+        "median": 0.033218172500000004,
+        "p90": 0.047808591,
+        "flagged_rate": 1.0
+      },
+      "D10": {
+        "n": 799,
+        "mean": 0.04622419611138924,
+        "median": 0.043513644,
+        "p90": 0.07371280600000003,
+        "flagged_rate": 0.9737171464330413
+      },
+      "D11": {
+        "n": 4,
+        "mean": 0.029619931,
+        "median": 0.026647433999999998,
+        "p90": 0.0426596192,
+        "flagged_rate": 1.0
+      },
+      "D20": {
+        "n": 959,
+        "mean": 0.048679114355265896,
+        "median": 0.047282387,
+        "p90": 0.07865291080000002,
+        "flagged_rate": 0.9989572471324296
+      },
+      "D43": {
+        "n": 91,
+        "mean": 0.06929972241758244,
+        "median": 0.06661623,
+        "p90": 0.097738385,
+        "flagged_rate": 1.0
+      },
+      "D44": {
+        "n": 571,
+        "mean": 0.05453787053555167,
+        "median": 0.05265964,
+        "p90": 0.08321176,
+        "flagged_rate": 1.0
+      },
+      "D50": {
+        "n": 323,
+        "mean": 0.06372535040247677,
+        "median": 0.06111519,
+        "p90": 0.08893192400000001,
+        "flagged_rate": 1.0
+      },
+      "Repair": {
+        "n": 14,
+        "mean": 0.02639109321428571,
+        "median": 0.0263682485,
+        "p90": 0.035605415,
+        "flagged_rate": 1.0
+      }
+    },
+    "note": "images with several damage classes are counted once in each of their classes"
+  }
+}

@@ -1,0 +1,35 @@
+family: efficientnet
+pretrained: true
+augment: false
+image_size: 224
+batch_size: 32
+epochs: 15
+lr: 0.0001
+weight_decay: 0.0001
+patience: 4
+num_workers: 4
+seed: 42
+amp: true
+latency_images: 200
+aux_classes: []
+aux_weight: 0.0
+experiment_id: efficientnet_b0_pretrained
+architecture: efficientnet_b0
+optimizer: AdamW
+scheduler: CosineAnnealingLR
+loss: BCEWithLogitsLoss
+pos_weight: 7.294718909710392
+pos_weights:
+  has_D40: 7.294718909710392
+best_epoch: 2
+selection: max val PR-AUC (D40); threshold = max val F1 (D40)
+preprocessing: RGB, full-frame bilinear resize, ImageNet mean/std; no evaluation crop
+weights: IMAGENET1K_V1
+trainable: all parameters
+parameters: 4008829
+limit: null
+device: mps
+torch: 2.13.0
+torchvision: 0.28.0
+dataset_version: dataset_v1
+splits_sha256: c7b4690943e597a382ab0f7a8ad1298317f267901476b72111a1b1a8041a8614
